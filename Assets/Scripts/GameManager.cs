@@ -40,11 +40,16 @@ public class GameManager : MonoBehaviour
             int ind = 0;
             foreach (var polygon in polygons)
             {
-                if (polygon.ContainsPoint(mousePos))
+                var contains = polygon.ContainsPoint(mousePos);
+                if (contains)
                 {
-                    polygons.RemoveAt(ind);
-                    Destroy(polygon.gameObject);
-                    break;
+                    polygon.SetColour(Color.red);
+                    // polygons.RemoveAt(ind);
+                    // Destroy(polygon.gameObject);
+                    // break;
+                } else
+                {
+                    polygon.SetColour(Color.black);
                 }
                 ind++;
             }

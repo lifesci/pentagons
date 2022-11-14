@@ -63,6 +63,12 @@ public class Polygon : MonoBehaviour
         Draw();
     }
 
+    public void SetColour(Color color)
+    {
+        lineRenderer.startColor = color;
+        lineRenderer.endColor = color;
+    }
+
     float Rotate(float angle)
     {
         return UnsignedAngle(angle + intComplement);
@@ -109,7 +115,7 @@ public class Polygon : MonoBehaviour
 
     public bool ContainsPoint(Vector2 point)
     {
-        int intersections = 0;
+        var intersections = 0;
         float m0 = 0;
         float b0 = point.y;
         for (var i = 0; i < points.Length; i++)
@@ -118,15 +124,18 @@ public class Polygon : MonoBehaviour
             var end = points[(i + 1) % points.Length];
             var diff = end - start;
 
-            var b1 = start.y;
             var m1 = diff.y/diff.x;
+            var b1 = start.y - m1 * start.x;
 
-            if (m0 == m1) continue;
+            if ((m0 - m1) == 0) continue;
 
             var x = (b1 - b0) / (m0 - m1);
-            var y = b0 + m0 * x;
 
-            if (x <= Mathf.Max(start.x, end.x) && x >= Mathf.Min(start.x, end.x) && x >= point.x) {
+            var xMin = Mathf.Min(start.x, end.x);
+            var xMax = Mathf.Max(start.x, end.x);
+
+            if (x < xMax && x > xMin && x > point.x)
+            {
                 intersections++;
             }
         }
