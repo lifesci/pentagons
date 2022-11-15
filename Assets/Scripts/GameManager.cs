@@ -9,8 +9,11 @@ public class GameManager : MonoBehaviour
     readonly Vector2 p0 = new(0, 0);
     readonly Vector2 p1 = new(1, 0);
 
-    List<Polygon> polygons = new();
-    HashSet<Vector2> usedMidPoints = new();
+    List<PolygonPrefab> polygonClones = new();
+    Dictionary<Vector2, (MidPoint, int)> midPointCounts = new();
+
+    PolygonPrefab ghost;
+    Vector2 ghostKey;
 
     // Start is called before the first frame update
     void Start()
@@ -24,35 +27,67 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            var mousePos = GetMousePos();
-            var midPoint = ClosestMidPoint(mousePos);
-            var key = RoundVec(midPoint.point);
-            if (!usedMidPoints.Contains(key))
-            {
-                var polygon = polygonFactory.CreatePentagon(midPoint.p1, midPoint.p0);
-                polygons.Add(polygon);
-                usedMidPoints.Add(RoundVec(midPoint.point));
-            }
+            HandleAddPolygon();
         }
-        if (Input.GetMouseButtonDown(1))
+        else if (Input.GetMouseButtonDown(1))
         {
-            var mousePos = GetMousePos();
-            int ind = 0;
-            foreach (var polygon in polygons)
+            HandleDeletePolygon();
+        } else
+        {
+            HandleGhostPolygon();
+        }
+    }
+
+    void HandleAddPolygon()
+    {
+        var mousePos = GetMousePos();
+        if (ghost is not null)
+        {
+            polygonClones.Add(ghost);
+            UpdateMidPointCounts(ghost.polygon, add: true);
+            ghost.SetColour(Color.black);
+            ghost = null;
+            ghostKey = Vector2.zero;
+        }
+    }
+
+    void HandleDeletePolygon()
+    {
+        var mousePos = GetMousePos();
+        int ind = 0;
+        foreach (var polygonClone in polygonClones)
+        {
+            var contains = polygonClone.polygon.ContainsPoint(mousePos);
+            if (contains)
             {
-                var contains = polygon.ContainsPoint(mousePos);
-                if (contains)
-                {
-                    polygon.SetColour(Color.red);
-                    // polygons.RemoveAt(ind);
-                    // Destroy(polygon.gameObject);
-                    // break;
-                } else
-                {
-                    polygon.SetColour(Color.black);
-                }
-                ind++;
+                UpdateMidPointCounts(polygonClone.polygon, add: false);
+                polygonClones.RemoveAt(ind);
+                Destroy(polygonClone.gameObject);
+                break;
             }
+            ind++;
+        }
+    }
+
+    void HandleGhostPolygon()
+    {
+        var mousePos = GetMousePos();
+        var midPoint = ClosestMidPoint(mousePos);
+        if (midPoint is null) return;
+        var key = midPoint.point;
+        if (key != ghostKey)
+        {
+            if (ghost is not null)
+            {
+                var oldGameObj = ghost.gameObject;
+                ghost = null;
+                Destroy(oldGameObj);
+            }
+
+            var virtualShape = polygonFactory.CreateVirtualPentagon(midPoint);
+            ghost = polygonFactory.CreateFromVirtual(virtualShape);
+            ghost.SetColour(Color.grey);
+            ghostKey = key;
         }
     }
 
@@ -63,45 +98,48 @@ public class GameManager : MonoBehaviour
         return mousePos;
     }
 
-    Vector2 RoundVec(Vector2 vec)
-    {
-        return new(Round(vec.x, 2), Round(vec.y, 2));
-    }
-
-    float Round(float val, int precision)
-    {
-        var factor = Mathf.Pow(10, precision);
-        return Mathf.Round(val * precision)/precision;
-    }
-
     void AddPentagon(Vector2 p0, Vector2 p1)
     {
-        var polygon = polygonFactory.CreatePentagon(p0, p1);
-        polygons.Add(polygon);
+        var polygonClone = polygonFactory.CreatePentagon(p0, p1);
+        polygonClones.Add(polygonClone);
+        UpdateMidPointCounts(polygonClone.polygon, add: true);
     }
 
-    MidPoint GetMidPoint(Vector2 p0, Vector2 p1)
+    void UpdateMidPointCounts(Polygon polygon, bool add)
     {
-        var midPoint = p0 + new Vector2((p1.x - p0.x) / 2, (p1.y - p0.y) / 2);
-        return new MidPoint(midPoint, p0, p1);
+        var mod = add ? 1 : -1;
+        int count;
+        for(var i = 0; i < polygon.midPoints.Length; i++)
+        {
+            var midPoint = polygon.midPoints[i];
+            if (!midPointCounts.ContainsKey(midPoint.point)) {
+                count = mod;
+                midPointCounts.Add(midPoint.point, (midPoint, count));
+            } else
+            {
+                (var existingMidPoint, var existingCount) = midPointCounts[midPoint.point];
+                count = existingCount + mod;
+                midPointCounts[midPoint.point] = (existingMidPoint, count);
+            }
+            if (count <= 0)
+            {
+                midPointCounts.Remove(midPoint.point);
+            }
+        }
     }
 
     MidPoint ClosestMidPoint(Vector2 pos)
     {
         var minDistance = float.MaxValue;
         MidPoint closestMidpoint = null;
-        foreach (var polygon in polygons)
+        foreach (var item in midPointCounts)
         {
-            var midPoints = polygon.midPoints;
-            for (var i = 0; i < midPoints.Length; i++)
+            var distance = Vector2.Distance(pos, item.Key);
+            (var midPoint, var count) = item.Value;
+            if (count == 1 && distance < minDistance)
             {
-                var midPoint = midPoints[i];
-                var distance = Vector2.Distance(pos, midPoint.point);
-                if (distance < minDistance)
-                {
-                    minDistance = distance;
-                    closestMidpoint = midPoint;
-                }
+                minDistance = distance;
+                closestMidpoint = midPoint;
             }
         }
         return closestMidpoint;

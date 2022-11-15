@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2350186952262972374}
   - component: {fileID: 7111956107824523910}
-  - component: {fileID: 8469316077394672061}
+  - component: {fileID: 7114052173016723774}
   m_Layer: 0
   m_Name: Polygon Prefab
   m_TagString: Untagged
@@ -130,7 +130,7 @@ LineRenderer:
     generateLightingData: 0
   m_UseWorldSpace: 1
   m_Loop: 0
---- !u!114 &8469316077394672061
+--- !u!114 &7114052173016723774
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -139,6 +139,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 3085147377117033883}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f492883784310264ab8c63f5029198c0, type: 3}
+  m_Script: {fileID: 11500000, guid: 305e631fa112b6746a0a77f0401aa212, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

@@ -1,47 +1,47 @@
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Polygon : MonoBehaviour
+public class Polygon
 {
-    bool initialized = false;
-    float intAngle;
-    float intComplement;
-    float edgeLength;
+    readonly float intAngle;
+    readonly float intComplement;
+    readonly float edgeLength;
     const float fullAngle = 360;
-    int numPoints;
+    readonly int numPoints;
     readonly Vector2 refAngle = new(1, 0);
 
     // points start from the base and move counter-clockwise
     public Vector2[] points { get; private set; }
     public MidPoint[] midPoints { get; private set; }
 
-    LineRenderer lineRenderer;
-
-    private void Initialize(int vertices, Vector2 p0, Vector2 p1)
+    public Polygon(int vertices, Vector2 p0, Vector2 p1)
     {
-        if (initialized) return;
+        numPoints = vertices;
+        intAngle = (numPoints - 2) * 180f / numPoints;
+        intComplement = 180 - intAngle;
+        edgeLength = Vector2.Distance(p0, p1);
+
+        ComputePoints(vertices, p0, p1);
+    }
+    public Polygon(int vertices, MidPoint midPoint)
+    {
+        var p0 = midPoint.p1;
+        var p1 = midPoint.p0;
 
         numPoints = vertices;
         intAngle = (numPoints - 2) * 180f / numPoints;
         intComplement = 180 - intAngle;
         edgeLength = Vector2.Distance(p0, p1);
 
-        lineRenderer = GetComponent<LineRenderer>();
-        lineRenderer.loop = true;
-        lineRenderer.startWidth = 0.1f;
-        lineRenderer.endWidth = 0.1f;
-        lineRenderer.startColor = Color.black;
-        lineRenderer.endColor = Color.black;
-        lineRenderer.positionCount = numPoints;
+        ComputePoints(vertices, p0, p1);
 
-        initialized = true;
+        points[1] = p1;
+        midPoints[0] = new(midPoint.point, p0, p1);
     }
 
-    public void ComputeAndDraw(int vertices, Vector2 p0, Vector2 p1)
+    public void ComputePoints(int vertices, Vector2 p0, Vector2 p1)
     {
-        Initialize(vertices, p0, p1);
         var angles = new float[numPoints];
         points = new Vector2[numPoints];
         midPoints = new MidPoint[numPoints];
@@ -59,14 +59,6 @@ public class Polygon : MonoBehaviour
             points[i] = NextPoint(points[i - 1], angles[i - 1]);
             midPoints[i] = MidPoint(points[i], angles[i]);
         }
-
-        Draw();
-    }
-
-    public void SetColour(Color color)
-    {
-        lineRenderer.startColor = color;
-        lineRenderer.endColor = color;
     }
 
     float Rotate(float angle)
@@ -97,17 +89,6 @@ public class Polygon : MonoBehaviour
         return new MidPoint(midPoint, start, end);
     }
 
-    void Draw()
-    {
-        Vector3[] points3D = new Vector3[points.Length];
-        for (var i = 0; i < points.Length; i++)
-        {
-            var point = points[i];
-            points3D[i] = new(point.x, point.y, 0);
-        }
-        lineRenderer.SetPositions(points3D);
-    }
-
     float Deg2Rad(float deg)
     {
         return deg * Mathf.PI / 180f;
@@ -122,6 +103,7 @@ public class Polygon : MonoBehaviour
         {
             var start = points[i];
             var end = points[(i + 1) % points.Length];
+
             var diff = end - start;
 
             var m1 = diff.y/diff.x;
@@ -141,14 +123,6 @@ public class Polygon : MonoBehaviour
         }
         return (intersections % 2 == 1);
     }
-
-    void PrintArr<T>(T[] arr)
-    {
-        for (var i = 0; i < arr.Length; i++)
-        {
-            Debug.Log(arr[i]);
-        }
-    }
 }
 
 public class MidPoint
@@ -162,5 +136,12 @@ public class MidPoint
         point = Point;
         p0 = P0;
         p1 = P1;
+    }
+
+    public MidPoint(MidPoint midPoint)
+    {
+        point = midPoint.point;
+        p0 = midPoint.p0;
+        p1 = midPoint.p1;
     }
 }
