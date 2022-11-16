@@ -19,7 +19,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         polygonFactory = GameObject.Find("Polygon Factory").GetComponent<PolygonFactory>();
-        AddPentagon(p0, p1);
+        polygonFactory.CreatePentagon(p0, p1);
     }
 
     // Update is called once per frame

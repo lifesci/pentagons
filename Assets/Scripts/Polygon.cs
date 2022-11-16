@@ -10,19 +10,26 @@ public class Polygon
     const float fullAngle = 360;
     readonly int numPoints;
     readonly Vector2 refAngle = new(1, 0);
+    readonly int vertices;
 
     // points start from the base and move counter-clockwise
     public Vector2[] points { get; private set; }
     public MidPoint[] midPoints { get; private set; }
 
+    public Line[] lines { get; private set; }
+
     public Polygon(int vertices, Vector2 p0, Vector2 p1)
     {
+        Line baseLine = new(p1, p0);
+
+        // populate geometric properties
         numPoints = vertices;
         intAngle = (numPoints - 2) * 180f / numPoints;
         intComplement = 180 - intAngle;
         edgeLength = Vector2.Distance(p0, p1);
 
         ComputePoints(vertices, p0, p1);
+
     }
     public Polygon(int vertices, MidPoint midPoint)
     {
@@ -38,6 +45,34 @@ public class Polygon
 
         points[1] = p1;
         midPoints[0] = new(midPoint.point, p0, p1);
+    }
+
+    public Polygon(int vertices, Line line)
+    {
+        // populate geometric properties
+        intAngle = (vertices - 2) * 180f / vertices;
+        intComplement = Helpers.halfAngle - intAngle;
+        edgeLength = line.length;
+        this.vertices = vertices;
+
+        // populate lines
+        lines = new Line[vertices];
+        lines[0] = new(line);
+        var curAngle = lines[0].angle;
+        Debug.Log(curAngle);
+        for (var i = 1; i < vertices; i++)
+        {
+            curAngle = Rotate(curAngle);
+            var start = lines[i - 1].p1;
+            var end = NextPoint(start, curAngle);
+            lines[i] = new(start, end);
+        }
+
+        // populate points
+        points = new Vector2[vertices];
+        for (var i = 0; i < vertices; i++) points[i] = lines[i].p0;
+
+        // for (var i = 0; i < vertices; i++) Debug.Log(points[i]);
     }
 
     public void ComputePoints(int vertices, Vector2 p0, Vector2 p1)
@@ -63,7 +98,7 @@ public class Polygon
 
     float Rotate(float angle)
     {
-        return UnsignedAngle(angle + intComplement);
+        return Helpers.UnsignedAngle(angle + intComplement);
     }
 
     float UnsignedAngle(float angle)
@@ -143,5 +178,64 @@ public class MidPoint
         point = midPoint.point;
         p0 = midPoint.p0;
         p1 = midPoint.p1;
+    }
+}
+
+public class Line
+{
+    public readonly Vector2 p0;
+    public readonly Vector2 p1;
+    public readonly float length;
+    public readonly float angle;
+
+    Vector2 midpoint;
+
+    public Line(Vector2 p0, Vector2 p1)
+    {
+        this.p0 = p0;
+        this.p1 = p1;
+
+        // set midpoint
+        Vector2 start;
+        Vector2 end;
+        if (p0.x != p1.x)
+        {
+            (start, end) = p0.x < p1.x ? (p0, p1) : (p1, p0);
+        } else
+        {
+            (start, end) = p0.y < p1.y ? (p0, p1) : (p1, p0);
+        }
+        var xMid = (end.x - start.x) / 2;
+        var yMid = (end.y - start.y) / 2;
+        midpoint = new(start.x + xMid, start.y + yMid);
+
+        // set length
+        length = Vector2.Distance(start, end);
+
+        // set angle
+        angle = Helpers.UnsignedAngle(p0, p1);
+    }
+
+    public Line(Line line)
+    {
+        p0 = line.p1;
+        p1 = line.p0;
+        midpoint = line.midpoint;
+        angle = Helpers.UnsignedAngle(line.angle + Helpers.halfAngle);
+    }
+
+    bool Equals(Line other)
+    {
+        if (other is null) return false;
+        var same = p0 == other.p0 && p1 == other.p1;
+        var reversed = p0 == other.p1 && p1 == other.p0;
+        return same || reversed;
+    }
+
+    public override bool Equals(object obj) => Equals(obj as Line);
+
+    public override int GetHashCode()
+    {
+        return midpoint.GetHashCode();
     }
 }

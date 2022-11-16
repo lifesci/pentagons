@@ -14,11 +14,11 @@ public class PolygonFactory : MonoBehaviour
         rotation = polygonPrefab.transform.rotation;
     }
 
-    PolygonPrefab Create(int edges, Vector2 p0, Vector2 p1)
+    PolygonPrefab Create(int vertices, Vector2 p0, Vector2 p1)
     {
         var polygonObj = Instantiate(polygonPrefab, position, rotation);
         var polygon = polygonObj.GetComponent<PolygonPrefab>();
-        polygon.Initialize(new Polygon(edges, p0, p1));
+        polygon.Initialize(new Polygon(vertices, new Line(p1, p0)));
         return polygon;
     }
 
@@ -44,6 +44,11 @@ public class PolygonFactory : MonoBehaviour
     public Polygon CreateVirtualPentagon(MidPoint midPoint)
     {
         return CreateVirtual(5, midPoint);
+    }
+
+    public Polygon CreateVirtualPentagon(Vector2 p0, Vector2 p1)
+    {
+        return new Polygon(5, new Line(p1, p0));
     }
 
 }
