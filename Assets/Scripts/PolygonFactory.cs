@@ -21,10 +21,12 @@ public class PolygonFactory : MonoBehaviour
         polygon.Initialize(new Polygon(vertices, new Line(p1, p0)));
         return polygon;
     }
-
-    Polygon CreateVirtual(int edges, MidPoint midPoint)
+    PolygonPrefab Create(int vertices, Line line)
     {
-        return new Polygon(edges, midPoint);
+        var polygonObj = Instantiate(polygonPrefab, position, rotation);
+        var polygon = polygonObj.GetComponent<PolygonPrefab>();
+        polygon.Initialize(new Polygon(vertices, line));
+        return polygon;
     }
 
     public PolygonPrefab CreateFromVirtual(Polygon virtualPoly)
@@ -40,15 +42,14 @@ public class PolygonFactory : MonoBehaviour
     {
         return Create(5, p0, p1);
     }
-
-    public Polygon CreateVirtualPentagon(MidPoint midPoint)
+    public PolygonPrefab CreatePentagon(Line line)
     {
-        return CreateVirtual(5, midPoint);
+        return Create(5, line);
     }
 
-    public Polygon CreateVirtualPentagon(Vector2 p0, Vector2 p1)
+    public Polygon CreateVirtualPentagon(Line line)
     {
-        return new Polygon(5, new Line(p1, p0));
+        return new Polygon(5, line);
     }
 
 }

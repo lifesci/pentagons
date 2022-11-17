@@ -30,4 +30,31 @@ public static class Helpers
         var signedAngle = Vector2.SignedAngle(Vector2.right, p1 - p0);
         return UnsignedAngle(signedAngle);
     }
+
+    public static float Deg2Rad(float deg)
+    {
+        return deg * Mathf.PI / 180;
+    }
+
+    public static Line ClosestFreeLine(Vector2 position, Dictionary<Line, int> lineCounts)
+    {
+        Line closestFreeLine = null;
+        float minDistance = float.MaxValue;
+        foreach(var item in lineCounts)
+        {
+            var line = item.Key;
+            var count = item.Value;
+
+            // a free line only appears once
+            if (count != 1) continue;
+
+            var distance = Vector2.Distance(position, line.midpoint);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                closestFreeLine = line;
+            }
+        }
+        return closestFreeLine;
+    }
 }
