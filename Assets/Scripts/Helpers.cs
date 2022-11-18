@@ -4,6 +4,9 @@ using UnityEngine;
 
 public static class Helpers
 {
+    // minimum difference required for points to be distinct
+    public const float epsilon = 0.00001f;
+
     public const float fullAngle = 360;
     public const float halfAngle = 180;
 
@@ -36,18 +39,14 @@ public static class Helpers
         return deg * Mathf.PI / 180;
     }
 
-    public static Line ClosestFreeLine(Vector2 position, Dictionary<Line, int> lineCounts)
+    public static Line ClosestFreeLine(Vector2 position, HashSet<Line> linesSet, Dictionary<Vector2, int> linesCount)
     {
         Line closestFreeLine = null;
         float minDistance = float.MaxValue;
-        foreach(var item in lineCounts)
+        foreach(var line in linesSet)
         {
-            var line = item.Key;
-            var count = item.Value;
-
-            // a free line only appears once
-            if (count != 1) continue;
-
+            var countKey = line.midpoint;
+            if (linesCount.ContainsKey(countKey) && linesCount[countKey] != 1) continue;
             var distance = Vector2.Distance(position, line.midpoint);
             if (distance < minDistance)
             {

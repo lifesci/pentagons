@@ -4,17 +4,23 @@ using UnityEngine;
 
 public class Polygon
 {
+    // geometric properties
     readonly float intAngle;
     readonly float intComplement;
     readonly float edgeLength;
     readonly int vertices;
+    readonly Vector2 centroid;
 
-    // points start from the base and move counter-clockwise
+    // bounding box
+    public readonly float bboxXMin = float.MaxValue;
+    public readonly float bboxXMax = float.MinValue;
+    public readonly float bboxYMin = float.MaxValue;
+    public readonly float bboxYMax = float.MinValue;
 
     public Line[] lines { get; private set; }
     public Vector2[] points { get; private set; }
 
-    public Polygon(int vertices, Line line)
+    public Polygon(int vertices, Line line, HashSet<Line> linesSet)
     {
         // populate geometric properties
         intAngle = (vertices - 2) * 180f / vertices;
@@ -31,15 +37,55 @@ public class Polygon
             curAngle = Rotate(curAngle);
             var start = lines[i - 1].p1;
             var end = NextPoint(start, curAngle);
-            lines[i] = new(start, end);
+            Line nextLine = SnapToGrid(start, end, linesSet);
+            lines[i] = nextLine;
         }
 
-        // populate points
+        // populate points, center point, and bounding box
         points = new Vector2[vertices];
+        var xSum = 0f;
+        var ySum = 0f;
         for (var i = 0; i < vertices; i++)
         {
-            points[i] = lines[i].p0;
+            var point = lines[i].p0;
+            points[i] = point;
+
+            xSum += point.x;
+            ySum += point.y;
+
+            var x = point.x;
+            var y = point.y;
+            bboxXMin = Mathf.Min(bboxXMin, x);
+            bboxXMax = Mathf.Max(bboxXMax, x);
+            bboxYMin = Mathf.Min(bboxYMin, y);
+            bboxYMax = Mathf.Max(bboxYMax, y);
         }
+
+        centroid = new(xSum / vertices, ySum / vertices);
+    }
+
+    Line SnapToGrid(Vector2 start, Vector2 end, HashSet<Line> linesSet)
+    {
+        foreach (var existingLine in linesSet)
+        {
+            if (Vector2.Distance(start, existingLine.p0) < Helpers.epsilon)
+            {
+                start = existingLine.p0;
+            }
+            if (Vector2.Distance(start, existingLine.p1) < Helpers.epsilon)
+            {
+                start = existingLine.p1;
+            }
+            if (Vector2.Distance(end, existingLine.p0) < Helpers.epsilon)
+            {
+                end = existingLine.p0;
+            }
+            if (Vector2.Distance(end, existingLine.p1) < Helpers.epsilon)
+            {
+                end = existingLine.p1;
+            }
+        }
+        return new(start, end);
     }
 
     float Rotate(float angle)
@@ -55,6 +101,10 @@ public class Polygon
 
     public bool ContainsPoint(Vector2 point)
     {
+        // check bounding box
+        if (!BBoxContainsPoint(point)) return false;
+
+        // check polygon
         var intersections = 0;
         float m0 = 0;
         float b0 = point.y;
@@ -82,6 +132,27 @@ public class Polygon
         }
         return (intersections % 2 == 1);
     }
+
+    bool BBoxContainsPoint(Vector2 point)
+    {
+        var containsX = point.x > bboxXMin && point.x < bboxXMax;
+        var containsY = point.y > bboxYMin && point.y < bboxYMax;
+        return containsX && containsY;
+    }
+
+    public bool Intersects(Polygon polygon)
+    {
+        for (var i = 0; i < points.Length; i++)
+        {
+            if (ContainsPoint(points[i])) return true;
+        }
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return centroid.GetHashCode();
+    }
 }
 
 public class Line
@@ -92,6 +163,8 @@ public class Line
     public readonly float angle;
 
     public readonly Vector2 midpoint;
+
+    bool negativeHash;
 
     public Line(Vector2 p0, Vector2 p1)
     {
@@ -104,9 +177,11 @@ public class Line
         if (p0.x != p1.x)
         {
             (start, end) = p0.x < p1.x ? (p0, p1) : (p1, p0);
+            negativeHash = true;
         } else
         {
             (start, end) = p0.y < p1.y ? (p0, p1) : (p1, p0);
+            negativeHash = false;
         }
         var xMid = (end.x - start.x) / 2;
         var yMid = (end.y - start.y) / 2;
@@ -126,20 +201,5 @@ public class Line
         midpoint = line.midpoint;
         angle = Helpers.UnsignedAngle(line.angle + Helpers.halfAngle);
         length = line.length;
-    }
-
-    bool Equals(Line other)
-    {
-        if (other is null) return false;
-        var same = p0 == other.p0 && p1 == other.p1;
-        var reversed = p0 == other.p1 && p1 == other.p0;
-        return same || reversed;
-    }
-
-    public override bool Equals(object obj) => Equals(obj as Line);
-
-    public override int GetHashCode()
-    {
-        return midpoint.GetHashCode();
     }
 }
