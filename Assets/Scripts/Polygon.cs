@@ -17,6 +17,8 @@ public class Polygon
     public readonly float bboxYMin = float.MaxValue;
     public readonly float bboxYMax = float.MinValue;
 
+    public bool root { get; private set; } = false;
+
     public Line[] lines { get; private set; }
     public Vector2[] points { get; private set; }
     public HashSet<Polygon> neighbours { get; private set; } = new();
@@ -72,6 +74,11 @@ public class Polygon
             AddNeighbour(neighbour);
             neighbour.AddNeighbour(this);
         }
+    }
+
+    public void SetRoot(bool val)
+    {
+        root = val;
     }
 
     void AddNeighbour(Polygon polygon)
@@ -184,11 +191,6 @@ public class Polygon
             if (ContainsPoint(polygon.points[i])) return true;
         }
         return false;
-    }
-
-    public override int GetHashCode()
-    {
-        return centroid.GetHashCode();
     }
 }
 

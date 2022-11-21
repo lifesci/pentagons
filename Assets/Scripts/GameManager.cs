@@ -9,9 +9,11 @@ public class GameManager : MonoBehaviour
     readonly Vector2 p0 = new(0, 0);
     readonly Vector2 p1 = new(1, 0);
 
-    List<PolygonPrefab> polygonClones = new();
+    HashSet<PolygonPrefab> polygonClones = new();
     HashSet<Line> linesSet = new();
     Dictionary<Vector2, int> linesCount = new();
+
+    PolygonPrefab root;
 
     PolygonPrefab ghost;
     Vector2 ghostKey;
@@ -20,7 +22,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         polygonFactory = GameObject.Find("Polygon Factory").GetComponent<PolygonFactory>();
-        AddPolygon(p0, p1);
+        AddRootPolygon(p0, p1);
     }
 
     // Update is called once per frame
@@ -32,7 +34,7 @@ public class GameManager : MonoBehaviour
         }
         else if (Input.GetMouseButtonDown(1))
         {
-            DeletePolygon();
+            DeleteClosestPolygon();
         } else
         {
             AddGhostPolygon();
@@ -58,10 +60,12 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void AddPolygon(Vector2 p0, Vector2 p1)
+    void AddRootPolygon(Vector2 p0, Vector2 p1)
     {
         var polygonPrefab = polygonFactory.CreatePentagon(p0, p1, linesSet);
+        polygonPrefab.polygon.SetRoot(true);
         AddPolygonLines(polygonPrefab);
+        root = polygonPrefab;
     }
 
     void AddPolygonLines(PolygonPrefab polygonPrefab)
@@ -95,31 +99,43 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void DeletePolygon()
+    void RemovePolygonNeighbours(Polygon polygon)
     {
-        // not allowed to delete last polygon
-        if (polygonClones.Count == 1) return;
+        foreach(var neighbour in polygon.neighbours)
+        {
+            neighbour.neighbours.Remove(polygon);
+        }
+    }
 
+    void DeleteClosestPolygon()
+    {
         var mousePos = GetMousePos();
-        var indexToRemove = -1;
-        var index = 0;
         PolygonPrefab prefabToRemove = null;
         foreach (var polygonPrefab in polygonClones)
         {
             var polygon = polygonPrefab.polygon;
             if (polygon.ContainsPoint(mousePos))
             {
-                indexToRemove = index;
                 prefabToRemove = polygonPrefab;
                 break;
             }
-            index++;
         }
-        if (prefabToRemove is not null)
+
+        DeletePolygon(prefabToRemove);
+
+        // remove any polygons not reachable from the root
+        RemoveUnreachable();
+    }
+
+    void DeletePolygon(PolygonPrefab prefab)
+    {
+        // root object cannot be removed manually
+        if (prefab is not null && !prefab.polygon.root)
         {
-            polygonClones.RemoveAt(indexToRemove);
-            RemovePolygonLines(prefabToRemove.polygon);
-            Destroy(prefabToRemove.gameObject);
+            polygonClones.Remove(prefab);
+            RemovePolygonLines(prefab.polygon);
+            RemovePolygonNeighbours(prefab.polygon);
+            Destroy(prefab.gameObject);
         }
     }
 
@@ -133,5 +149,47 @@ public class GameManager : MonoBehaviour
         var mousePos3D = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector2 mousePos = new(mousePos3D.x, mousePos3D.y);
         return mousePos;
+    }
+
+    void RemoveUnreachable()
+    {
+        var reachablePolygons = GetReachablePolygons();
+        List<PolygonPrefab> toRemove = new();
+        foreach (var polygonPrefab in polygonClones)
+        {
+            if (!reachablePolygons.Contains(polygonPrefab.polygon))
+            {
+                toRemove.Add(polygonPrefab);
+            }
+        }
+
+        foreach (var prefab in toRemove)
+        {
+            DeletePolygon(prefab);
+        }
+    }
+
+    // get set of polygons reachable from the root
+    HashSet<Polygon> GetReachablePolygons()
+    {
+        Queue<Polygon> toVisit = new();
+        HashSet<Polygon> visited = new();
+
+        toVisit.Enqueue(root.polygon);
+
+        while(toVisit.Count > 0)
+        {
+            var curPolygon = toVisit.Dequeue();
+            visited.Add(curPolygon);
+            foreach (var neighbour in curPolygon.neighbours)
+            {
+                if (!visited.Contains(neighbour))
+                {
+                    toVisit.Enqueue(neighbour);
+                }
+            }
+        }
+
+        return visited;
     }
 }
