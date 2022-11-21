@@ -19,6 +19,7 @@ public class Polygon
 
     public Line[] lines { get; private set; }
     public Vector2[] points { get; private set; }
+    public HashSet<Polygon> neighbours { get; private set; } = new();
 
     public Polygon(int vertices, Line line, HashSet<Line> linesSet)
     {
@@ -30,7 +31,7 @@ public class Polygon
 
         // populate lines
         lines = new Line[vertices];
-        lines[0] = new(line);
+        lines[0] = new(line, this);
         var curAngle = lines[0].angle;
         for (var i = 1; i < vertices; i++)
         {
@@ -61,31 +62,70 @@ public class Polygon
             bboxYMax = Mathf.Max(bboxYMax, y);
         }
 
+        // set centroid
         centroid = new(xSum / vertices, ySum / vertices);
+
+        // update neighbours
+        var neighbour = line.polygon;
+        if (neighbour is not null)
+        {
+            AddNeighbour(neighbour);
+            neighbour.AddNeighbour(this);
+        }
+    }
+
+    void AddNeighbour(Polygon polygon)
+    {
+        neighbours.Add(polygon);
+    }
+
+    void RemoveNeighbour(Polygon polygon)
+    {
+        if (neighbours.Contains(polygon))
+        {
+            neighbours.Remove(polygon);
+        }
     }
 
     Line SnapToGrid(Vector2 start, Vector2 end, HashSet<Line> linesSet)
     {
+        Polygon mappedStart = null;
+        Polygon mappedEnd = null;
         foreach (var existingLine in linesSet)
         {
             if (Vector2.Distance(start, existingLine.p0) < Helpers.epsilon)
             {
                 start = existingLine.p0;
+                mappedStart = existingLine.polygon;
             }
             if (Vector2.Distance(start, existingLine.p1) < Helpers.epsilon)
             {
                 start = existingLine.p1;
+                mappedStart = existingLine.polygon;
             }
             if (Vector2.Distance(end, existingLine.p0) < Helpers.epsilon)
             {
                 end = existingLine.p0;
+                mappedEnd = existingLine.polygon;
             }
             if (Vector2.Distance(end, existingLine.p1) < Helpers.epsilon)
             {
                 end = existingLine.p1;
+                mappedEnd = existingLine.polygon;
             }
+
+            // found matching line
+            if (mappedStart is not null && mappedStart == mappedEnd) break;
         }
-        return new(start, end);
+
+        // detect neighbour
+        if ((mappedStart is not null) && (mappedStart == mappedEnd))
+        {
+            AddNeighbour(mappedStart);
+            mappedStart.AddNeighbour(this);
+        }
+
+        return new(start, end, this);
     }
 
     float Rotate(float angle)
@@ -164,10 +204,14 @@ public class Line
 
     public readonly Vector2 midpoint;
 
+    public readonly Polygon polygon;
+
     bool negativeHash;
 
-    public Line(Vector2 p0, Vector2 p1)
+    public Line(Vector2 p0, Vector2 p1, Polygon polygon)
     {
+        this.polygon = polygon;
+
         this.p0 = p0;
         this.p1 = p1;
 
@@ -194,8 +238,9 @@ public class Line
         angle = Helpers.UnsignedAngle(p0, p1);
     }
 
-    public Line(Line line)
+    public Line(Line line, Polygon polygon)
     {
+        this.polygon = polygon;
         p0 = line.p1;
         p1 = line.p0;
         midpoint = line.midpoint;

@@ -89,6 +89,9 @@ public class GameManager : MonoBehaviour
 
     void DeletePolygon()
     {
+        // not allowed to delete last polygon
+        if (polygonClones.Count == 1) return;
+
         var mousePos = GetMousePos();
         var indexToRemove = -1;
         var index = 0;

@@ -18,7 +18,7 @@ public class PolygonFactory : MonoBehaviour
     {
         var polygonObj = Instantiate(polygonPrefab, position, rotation);
         var polygon = polygonObj.GetComponent<PolygonPrefab>();
-        polygon.Initialize(new Polygon(vertices, new Line(p1, p0), linesSet));
+        polygon.Initialize(new Polygon(vertices, new Line(p1, p0, null), linesSet));
         return polygon;
     }
     PolygonPrefab Create(int vertices, Line line, HashSet<Line> linesSet)
