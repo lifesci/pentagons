@@ -144,33 +144,30 @@ public class Polygon
         // check bounding box
         if (!BBoxContainsPoint(point)) return false;
 
-        // check polygon
-        var intersections = 0;
-        float m0 = 0;
-        float b0 = point.y;
-        for (var i = 0; i < points.Length; i++)
+        var setMeasure = false;
+        var positive = true;
+
+        for (var i = 0; i < lines.Length; i++)
         {
-            var start = points[i];
-            var end = points[(i + 1) % points.Length];
+            var line = lines[i];
+            var measure = (point.x - line.p0.x) * (line.p1.y - line.p0.y) - (point.y - line.p0.y) * (line.p1.x - line.p0.x);
 
-            var diff = end - start;
+            // point is on line
+            if (measure == 0) return false;
 
-            var m1 = diff.y/diff.x;
-            var b1 = start.y - m1 * start.x;
-
-            if ((m0 - m1) == 0) continue;
-
-            var x = (b1 - b0) / (m0 - m1);
-
-            var xMin = Mathf.Min(start.x, end.x);
-            var xMax = Mathf.Max(start.x, end.x);
-
-            if (x < xMax && x > xMin && x > point.x)
+            if (!setMeasure)
             {
-                intersections++;
+                positive = measure > 0;
+                setMeasure = true;
+            } else
+            {
+                if (!((measure > 0) == positive))
+                {
+                    return false;
+                }
             }
         }
-        return (intersections % 2 == 1);
+        return true;
     }
 
     bool BBoxContainsPoint(Vector2 point)
@@ -182,9 +179,9 @@ public class Polygon
 
     public bool Intersects(Polygon polygon)
     {
-        for (var i = 0; i < points.Length; i++)
+        for (var i = 0; i < polygon.points.Length; i++)
         {
-            if (ContainsPoint(points[i])) return true;
+            if (ContainsPoint(polygon.points[i])) return true;
         }
         return false;
     }

@@ -45,7 +45,15 @@ public class GameManager : MonoBehaviour
         var line = Helpers.ClosestFreeLine(mousePos, linesSet, linesCount);
         if (line is not null)
         {
-            var polygonPrefab = polygonFactory.CreatePentagon(line, linesSet);
+            var virtualPolygon = polygonFactory.CreateVirtualPentagon(line, linesSet);
+
+            // intersection not allowed
+            foreach (var existingClone in polygonClones)
+            {
+                if (existingClone.polygon.Intersects(virtualPolygon)) return;
+            }
+
+            var polygonPrefab = polygonFactory.CreateFromVirtual(virtualPolygon);
             AddPolygonLines(polygonPrefab);
         }
     }
