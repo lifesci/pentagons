@@ -121,7 +121,11 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        DeletePolygon(prefabToRemove);
+        // root object cannot be removed manually
+        if (prefabToRemove is not null && !prefabToRemove.polygon.root)
+        {
+            DeletePolygon(prefabToRemove);
+        }
 
         // remove any polygons not reachable from the root
         RemoveUnreachable();
@@ -129,14 +133,10 @@ public class GameManager : MonoBehaviour
 
     void DeletePolygon(PolygonPrefab prefab)
     {
-        // root object cannot be removed manually
-        if (prefab is not null && !prefab.polygon.root)
-        {
-            polygonClones.Remove(prefab);
-            RemovePolygonLines(prefab.polygon);
-            RemovePolygonNeighbours(prefab.polygon);
-            Destroy(prefab.gameObject);
-        }
+        polygonClones.Remove(prefab);
+        RemovePolygonLines(prefab.polygon);
+        RemovePolygonNeighbours(prefab.polygon);
+        Destroy(prefab.gameObject);
     }
 
     void AddGhostPolygon()
