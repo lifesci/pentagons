@@ -4,25 +4,55 @@ using UnityEngine;
 
 public class PolygonPrefab : MonoBehaviour
 {
-    LineRenderer lineRenderer;
-    public Polygon polygon { get; private set; }
+    protected LineRenderer lineRenderer;
+    protected PolygonCollider2D polygonCollider;
+    public Polygon polygon { get; protected set; }
 
-    private void Awake()
+    protected Vector2[] relativePoints;
+
+    void Awake()
     {
         lineRenderer = GetComponent<LineRenderer>();
+        polygonCollider = GetComponent<PolygonCollider2D>();
     }
 
-    public void Initialize(Polygon Polygon)
+    public void Initialize(Polygon polygon)
     {
-        polygon = Polygon;
+        this.polygon = polygon;
+        gameObject.transform.position = polygon.centroid;
 
-        lineRenderer.positionCount = polygon.points.Length;
+        SetRelativePoints();
+        InitializeCollider();
+        InitializeRenderer();
+
+        Draw();
+    }
+
+    protected void SetRelativePoints()
+    {
+        relativePoints = new Vector2[polygon.points.Length];
+        for (var i = 0; i < polygon.points.Length; i++)
+        {
+            relativePoints[i] = polygon.points[i] - polygon.centroid;
+        }
+    }
+
+    public void InitializeCollider()
+    {
+        polygonCollider.offset = Vector2.zero;
+        polygonCollider.isTrigger = true;
+        polygonCollider.pathCount = 1;
+        polygonCollider.SetPath(0, relativePoints);
+    }
+
+    public void InitializeRenderer()
+    {
+        lineRenderer.positionCount = relativePoints.Length;
         lineRenderer.loop = true;
         lineRenderer.startWidth = 0.1f;
         lineRenderer.endWidth = 0.1f;
         lineRenderer.startColor = Color.black;
         lineRenderer.endColor = Color.black;
-        Draw();
     }
 
     public void SetColour(Color colour)
@@ -31,12 +61,12 @@ public class PolygonPrefab : MonoBehaviour
         lineRenderer.endColor = colour;
     }
 
-    void Draw()
+    protected void Draw()
     {
-        Vector3[] points3D = new Vector3[polygon.points.Length];
-        for (var i = 0; i < polygon.points.Length; i++)
+        Vector3[] points3D = new Vector3[relativePoints.Length];
+        for (var i = 0; i < relativePoints.Length; i++)
         {
-            var point = polygon.points[i];
+            var point = relativePoints[i];
             points3D[i] = new(point.x, point.y, 0);
         }
         lineRenderer.SetPositions(points3D);

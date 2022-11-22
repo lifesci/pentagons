@@ -23,6 +23,11 @@ public class GameManager : MonoBehaviour
     {
         polygonFactory = GameObject.Find("Polygon Factory").GetComponent<PolygonFactory>();
         AddRootPolygon(p0, p1);
+
+        var enemyPrefab = polygonFactory.CreateEnemy(3, new Line(new Vector2(-3, -3), new Vector2(-2, -3), null));
+        var force = (root.polygon.centroid - enemyPrefab.polygon.centroid).normalized*30;
+        enemyPrefab.rigidBody.AddForce(force);
+        enemyPrefab.rigidBody.AddTorque(50);
     }
 
     // Update is called once per frame

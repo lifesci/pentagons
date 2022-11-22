@@ -153,6 +153,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   polygonPrefab: {fileID: 3085147377117033883, guid: 8b5bc18ca8671ef47915d46b116dab93, type: 3}
+  enemyPrefab: {fileID: 2767613243063242129, guid: a2c24d4d5e75b4e419b3b7460fa14da4, type: 3}
 --- !u!4 &207057864
 Transform:
   m_ObjectHideFlags: 0
