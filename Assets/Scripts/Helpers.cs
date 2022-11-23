@@ -10,6 +10,17 @@ public static class Helpers
     public const float fullAngle = 360;
     public const float halfAngle = 180;
 
+    static GameManager gameManager;
+
+    public static GameManager GameManager()
+    {
+        if (gameManager is null)
+        {
+            gameManager = GameObject.Find("Game Manager").GetComponent<GameManager>();
+        }
+        return gameManager;
+    }
+
     public static float Round(float val, int precision)
     {
         var factor = Mathf.Pow(10, precision);

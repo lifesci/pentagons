@@ -10,6 +10,8 @@ public class PolygonPrefab : MonoBehaviour
 
     protected Vector2[] relativePoints;
 
+    public int health;
+
     void Awake()
     {
         lineRenderer = GetComponent<LineRenderer>();
@@ -19,6 +21,7 @@ public class PolygonPrefab : MonoBehaviour
     public void Initialize(Polygon polygon)
     {
         this.polygon = polygon;
+        health = polygon.vertices;
         gameObject.transform.position = polygon.centroid;
 
         SetRelativePoints();

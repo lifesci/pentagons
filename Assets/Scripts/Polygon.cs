@@ -8,9 +8,8 @@ public class Polygon
     readonly float intAngle;
     readonly float intComplement;
     readonly float edgeLength;
-    readonly int vertices;
+    public readonly int vertices;
     public readonly Vector2 centroid;
-    public int health { get; private set; }
 
     // bounding box
     public readonly float bboxXMin = float.MaxValue;
@@ -31,7 +30,6 @@ public class Polygon
         intComplement = Helpers.halfAngle - intAngle;
         edgeLength = line.length;
         this.vertices = vertices;
-        health = vertices;
 
         // populate lines
         lines = new Line[vertices];

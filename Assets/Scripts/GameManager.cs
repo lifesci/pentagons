@@ -197,4 +197,18 @@ public class GameManager : MonoBehaviour
 
         return visited;
     }
+
+    public void HandleCollision(PolygonPrefab polygon, EnemyPrefab enemy)
+    {
+        polygon.health -= enemy.polygon.vertices;
+        enemy.health -= polygon.polygon.vertices;
+
+        if (enemy.health <= 0) Destroy(enemy.gameObject);
+
+        if (polygon.health <= 0)
+        {
+            DeletePolygon(polygon);
+            RemoveUnreachable();
+        }
+    }
 }
