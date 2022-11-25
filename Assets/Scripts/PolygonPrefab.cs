@@ -12,10 +12,16 @@ public class PolygonPrefab : MonoBehaviour
 
     public int health;
 
+    protected Color healthyColour;
+    protected Color deadColour;
+
     void Awake()
     {
         lineRenderer = GetComponent<LineRenderer>();
         polygonCollider = GetComponent<PolygonCollider2D>();
+
+        healthyColour = Color.green;
+        deadColour = Color.red;
     }
 
     public void Initialize(Polygon polygon)
@@ -54,12 +60,13 @@ public class PolygonPrefab : MonoBehaviour
         lineRenderer.loop = true;
         lineRenderer.startWidth = 0.1f;
         lineRenderer.endWidth = 0.1f;
-        lineRenderer.startColor = Color.black;
-        lineRenderer.endColor = Color.black;
+        SetColour();
     }
 
-    public void SetColour(Color colour)
+    public void SetColour()
     {
+        var distance = (float)Mathf.Max(health - 1, 0) / (polygon.vertices - 1);
+        var colour = Color.Lerp(deadColour, healthyColour, distance);
         lineRenderer.startColor = colour;
         lineRenderer.endColor = colour;
     }
@@ -73,5 +80,12 @@ public class PolygonPrefab : MonoBehaviour
             points3D[i] = new(point.x, point.y, 0);
         }
         lineRenderer.SetPositions(points3D);
+    }
+
+    public virtual bool TakeDamage(int damage)
+    {
+        health -= damage;
+        SetColour();
+        return health <= 0;
     }
 }

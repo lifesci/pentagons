@@ -20,6 +20,8 @@ public class EnemySpawner : MonoBehaviour
     float forceMultiplier = 30;
     float torque = 30;
 
+    int vertices = 3;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -37,7 +39,7 @@ public class EnemySpawner : MonoBehaviour
         {
             yield return new WaitForSeconds(interval);
             var line = RandomSpawnLine();
-            var enemyPrefab = polygonFactory.CreateEnemy(3, line);
+            var enemyPrefab = polygonFactory.CreateEnemy(vertices, line);
             ApplyForce(enemyPrefab);
             spawned++;
         }

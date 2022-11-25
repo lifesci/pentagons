@@ -7,12 +7,17 @@ public class EnemyPrefab : PolygonPrefab
     public Rigidbody2D rigidBody { get; private set; }
     public GameManager gameManager;
 
+
+
     private void Awake()
     {
         lineRenderer = GetComponent<LineRenderer>();
         polygonCollider = GetComponent<PolygonCollider2D>();
         rigidBody = GetComponent<Rigidbody2D>();
         gameManager = Helpers.GameManager();
+
+        healthyColour = Color.black;
+        deadColour = Color.magenta;
     }
 
     public new void Initialize(Polygon polygon)
@@ -34,12 +39,6 @@ public class EnemyPrefab : PolygonPrefab
         rigidBody.position = polygon.centroid;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     private void OnTriggerEnter2D(Collider2D collision)
     {
         var gameObject = collision.gameObject;
@@ -50,5 +49,12 @@ public class EnemyPrefab : PolygonPrefab
             var polygon = gameObject.GetComponent<PolygonPrefab>();
             gameManager.HandleCollision(polygon, this);
         }
+    }
+
+    public override bool TakeDamage(int damage)
+    {
+        health -= damage;
+        SetColour();
+        return health <= 0;
     }
 }

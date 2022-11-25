@@ -22,13 +22,14 @@ public class PolygonFactory : MonoBehaviour
         enemyRotation = polygonPrefab.transform.rotation;
     }
 
-    PolygonPrefab Create(int vertices, Vector2 p0, Vector2 p1, HashSet<Line> linesSet)
+    public PolygonPrefab Create(int vertices, Vector2 p0, Vector2 p1, HashSet<Line> linesSet)
     {
         var polygonObj = Instantiate(polygonPrefab, position, rotation);
         var polygon = polygonObj.GetComponent<PolygonPrefab>();
         polygon.Initialize(new Polygon(vertices, new Line(p1, p0, null), linesSet));
         return polygon;
     }
+
     PolygonPrefab Create(int vertices, Line line, HashSet<Line> linesSet)
     {
         var polygonObj = Instantiate(polygonPrefab, position, rotation);
@@ -45,19 +46,9 @@ public class PolygonFactory : MonoBehaviour
         return polygonScript;
     }
 
-
-    public PolygonPrefab CreatePentagon(Vector2 p0, Vector2 p1, HashSet<Line> linesSet)
+    public Polygon CreateVirtual(int vertices, Line line, HashSet<Line> linesSet)
     {
-        return Create(5, p0, p1, linesSet);
-    }
-    public PolygonPrefab CreatePentagon(Line line, HashSet<Line> linesSet)
-    {
-        return Create(5, line, linesSet);
-    }
-
-    public Polygon CreateVirtualPentagon(Line line, HashSet<Line> linesSet)
-    {
-        return new Polygon(5, line, linesSet);
+        return new Polygon(vertices, line, linesSet);
     }
 
     public EnemyPrefab CreateEnemy(int vertices, Line line)

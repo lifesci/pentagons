@@ -15,6 +15,8 @@ public class GameManager : MonoBehaviour
 
     public PolygonPrefab root { get; private set; }
 
+    int vertices = 5;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -44,7 +46,7 @@ public class GameManager : MonoBehaviour
         var line = Helpers.ClosestFreeLine(mousePos, linesSet, linesCount);
         if (line is not null)
         {
-            var virtualPolygon = polygonFactory.CreateVirtualPentagon(line, linesSet);
+            var virtualPolygon = polygonFactory.CreateVirtual(vertices, line, linesSet);
 
             // intersection not allowed
             foreach (var existingClone in polygonClones)
@@ -59,7 +61,7 @@ public class GameManager : MonoBehaviour
 
     void AddRootPolygon(Vector2 p0, Vector2 p1)
     {
-        var polygonPrefab = polygonFactory.CreatePentagon(p0, p1, linesSet);
+        var polygonPrefab = polygonFactory.Create(vertices, p0, p1, linesSet);
         polygonPrefab.polygon.SetRoot(true);
         AddPolygonLines(polygonPrefab);
         root = polygonPrefab;
@@ -192,15 +194,21 @@ public class GameManager : MonoBehaviour
 
     public void HandleCollision(PolygonPrefab polygon, EnemyPrefab enemy)
     {
-        polygon.health -= enemy.polygon.vertices;
-        enemy.health -= polygon.polygon.vertices;
+        var polygonDied = polygon.TakeDamage(enemy.polygon.vertices);
+        var enemyDied = enemy.TakeDamage(polygon.polygon.vertices);
 
-        if (enemy.health <= 0) Destroy(enemy.gameObject);
+        if (enemyDied) Destroy(enemy.gameObject);
 
-        if (polygon.health <= 0)
+        if (polygonDied)
         {
-            DeletePolygon(polygon);
-            RemoveUnreachable();
+            if (polygon.polygon.root)
+            {
+                Debug.Log("game over");
+            } else
+            {
+                DeletePolygon(polygon);
+                RemoveUnreachable();
+            }
         }
     }
 }

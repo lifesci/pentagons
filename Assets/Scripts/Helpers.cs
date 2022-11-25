@@ -11,6 +11,7 @@ public static class Helpers
     public const float halfAngle = 180;
 
     static GameManager gameManager;
+    static MainManager mainManager;
 
     public static GameManager GameManager()
     {
