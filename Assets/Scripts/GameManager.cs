@@ -15,11 +15,12 @@ public class GameManager : MonoBehaviour
 
     public PolygonPrefab root { get; private set; }
 
-    int vertices = 5;
+    int vertices;
 
     // Start is called before the first frame update
     void Start()
     {
+        vertices = MainManager.Instance.polygonSize;
         polygonFactory = GameObject.Find("Polygon Factory").GetComponent<PolygonFactory>();
         AddRootPolygon(p0, p1);
     }

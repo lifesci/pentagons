@@ -5,7 +5,7 @@ using UnityEngine;
 public class Polygon
 {
     // geometric properties
-    readonly float intAngle;
+    public readonly float intAngle;
     readonly float intComplement;
     readonly float edgeLength;
     public readonly int vertices;

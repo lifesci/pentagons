@@ -15,6 +15,8 @@ public class PolygonPrefab : MonoBehaviour
     protected Color healthyColour;
     protected Color deadColour;
 
+    protected float lineWidth = 0.1f;
+
     void Awake()
     {
         lineRenderer = GetComponent<LineRenderer>();
@@ -58,8 +60,8 @@ public class PolygonPrefab : MonoBehaviour
     {
         lineRenderer.positionCount = relativePoints.Length;
         lineRenderer.loop = true;
-        lineRenderer.startWidth = 0.1f;
-        lineRenderer.endWidth = 0.1f;
+        lineRenderer.startWidth = lineWidth;
+        lineRenderer.endWidth = lineWidth;
         SetColour();
     }
 
@@ -76,7 +78,15 @@ public class PolygonPrefab : MonoBehaviour
         Vector3[] points3D = new Vector3[relativePoints.Length];
         for (var i = 0; i < relativePoints.Length; i++)
         {
-            var point = relativePoints[i];
+            var relativePoint = relativePoints[i];
+
+            // unit vector from point to centroid
+            var relativeVec = -relativePoint.normalized;
+            var adjustmentFactor = lineWidth/ Mathf.Sin(Helpers.Deg2Rad(polygon.intAngle)/ 2)/2;
+            var adjustment = relativeVec * adjustmentFactor;
+
+            var point = relativePoint + adjustment;
+
             points3D[i] = new(point.x, point.y, 0);
         }
         lineRenderer.SetPositions(points3D);
