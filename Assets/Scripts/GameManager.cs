@@ -5,9 +5,13 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     PolygonFactory polygonFactory;
+    EnemySpawner enemySpawner;
 
     readonly Vector2 p0 = new(0, 0);
     readonly Vector2 p1 = new(1, 0);
+
+    // free build time before enemies begin to spawn
+    const int spawnDelay = 3;
 
     HashSet<PolygonPrefab> polygonClones = new();
     HashSet<Line> linesSet = new();
@@ -17,11 +21,19 @@ public class GameManager : MonoBehaviour
 
     int vertices;
 
+    int level;
+    bool startLevel;
+
+    int enemyCount;
+
     // Start is called before the first frame update
     void Start()
     {
+        level = 1;
+        startLevel = true;
         vertices = MainManager.Instance.polygonSize;
         polygonFactory = GameObject.Find("Polygon Factory").GetComponent<PolygonFactory>();
+        enemySpawner = GameObject.Find("Enemy Spawner").GetComponent<EnemySpawner>();
         AddRootPolygon(p0, p1);
     }
 
@@ -38,6 +50,18 @@ public class GameManager : MonoBehaviour
         } else
         {
             AddGhostPolygon();
+        }
+
+        if (startLevel)
+        {
+            var enemyVertices = EnemyVertices(level);
+            enemyCount = enemySpawner.SpawnRandom(enemyVertices, 3);
+            startLevel = false;
+            level++;
+        }
+        if (!startLevel && enemyCount == 0)
+        {
+            startLevel = true;
         }
     }
 
@@ -198,7 +222,11 @@ public class GameManager : MonoBehaviour
         var polygonDied = polygon.TakeDamage(enemy.polygon.vertices);
         var enemyDied = enemy.TakeDamage(polygon.polygon.vertices);
 
-        if (enemyDied) Destroy(enemy.gameObject);
+        if (enemyDied)
+        {
+            enemyCount--;
+            Destroy(enemy.gameObject);
+        }
 
         if (polygonDied)
         {
@@ -211,5 +239,10 @@ public class GameManager : MonoBehaviour
                 RemoveUnreachable();
             }
         }
+    }
+
+    int EnemyVertices(int level)
+    {
+        return 20 * level;
     }
 }

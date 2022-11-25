@@ -9,18 +9,14 @@ public class EnemySpawner : MonoBehaviour
 
     Vector2 root;
 
-    float time = 0;
-    float interval = 1;
-    float distance = 10;
+    const float interval = 1;
+    const float distance = 10;
 
-    int capacity = 10;
+    const float forceMultiplier = 30;
+    const float torque = 30;
 
-    bool spawning = false;
-
-    float forceMultiplier = 30;
-    float torque = 30;
-
-    int vertices = 3;
+    const int minVertices = 3;
+    const int maxVertices = 12;
 
     // Start is called before the first frame update
     void Start()
@@ -28,20 +24,51 @@ public class EnemySpawner : MonoBehaviour
         polygonFactory = GameObject.Find("Polygon Factory").GetComponent<PolygonFactory>();
         gameManager = Helpers.GameManager();
         this.root = gameManager.root.polygon.centroid;
-        spawning = true;
-        StartCoroutine(SpawnRoutine());
     }
 
-    IEnumerator SpawnRoutine()
+    public int SpawnRandom(int totalVertices, int delay)
     {
-        var spawned = 0;
-        while (spawned < capacity)
+        List<int> enemySizes = new();
+        var remainingVertices = totalVertices ;
+        while (remainingVertices > 0)
+        {
+            int vertices;
+            if (remainingVertices / minVertices < 2)
+            {
+                vertices = remainingVertices;
+            } else
+            {
+                if (remainingVertices <= maxVertices)
+                {
+                    var maxChoice = remainingVertices - minVertices;
+                    var choice = Random.Range(minVertices, maxChoice + 2);
+                    if (choice > maxChoice)
+                    {
+                        choice = remainingVertices;
+                    }
+                    vertices = choice;
+                } else
+                {
+                    var maxChoice = Mathf.Min(remainingVertices - minVertices, maxVertices);
+                    vertices = Random.Range(minVertices, maxChoice);
+                }
+            }
+            enemySizes.Add(vertices);
+            remainingVertices -= vertices;
+        }
+        StartCoroutine(SpawnRoutine(enemySizes, delay));
+        return enemySizes.Count;
+    }
+
+    IEnumerator SpawnRoutine(List<int> enemySizes, int delay)
+    {
+        yield return new WaitForSeconds(delay);
+        foreach (var vertices in enemySizes)
         {
             yield return new WaitForSeconds(interval);
             var line = RandomSpawnLine();
             var enemyPrefab = polygonFactory.CreateEnemy(vertices, line);
             ApplyForce(enemyPrefab);
-            spawned++;
         }
     }
     
