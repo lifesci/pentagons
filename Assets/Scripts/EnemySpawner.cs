@@ -56,6 +56,7 @@ public class EnemySpawner : MonoBehaviour
             enemySizes.Add(vertices);
             remainingVertices -= vertices;
         }
+
         StartCoroutine(SpawnRoutine(enemySizes, delay));
         return enemySizes.Count;
     }

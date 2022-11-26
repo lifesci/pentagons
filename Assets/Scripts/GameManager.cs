@@ -17,6 +17,8 @@ public class GameManager : MonoBehaviour
     HashSet<Line> linesSet = new();
     Dictionary<Vector2, int> linesCount = new();
 
+    Dictionary<PolygonPrefab, HashSet<EnemyPrefab>> collisionRecord = new();
+
     public PolygonPrefab root { get; private set; }
 
     int vertices;
@@ -26,9 +28,12 @@ public class GameManager : MonoBehaviour
 
     int enemyCount;
 
+    GameObject mainCamera;
+
     // Start is called before the first frame update
     void Start()
     {
+        mainCamera = GameObject.Find("Main Camera");
         level = 1;
         startLevel = true;
         vertices = MainManager.Instance.polygonSize;
@@ -40,6 +45,7 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        HandleCollisions();
         if (Input.GetMouseButtonDown(0))
         {
             AddPolygon();
@@ -51,18 +57,33 @@ public class GameManager : MonoBehaviour
         {
             AddGhostPolygon();
         }
+        CheckStartLevel();
+    }
 
+    void CheckStartLevel()
+    {
         if (startLevel)
         {
+            Debug.Log("Starting Level " + level);
             var enemyVertices = EnemyVertices(level);
             enemyCount = enemySpawner.SpawnRandom(enemyVertices, 3);
             startLevel = false;
             level++;
         }
-        if (!startLevel && enemyCount == 0)
+        else if (!startLevel && enemyCount == 0)
         {
             startLevel = true;
         }
+    }
+
+    int TotalLines()
+    {
+        var total = 0;
+        foreach (var item in linesCount)
+        {
+            total += item.Value;
+        }
+        return total;
     }
 
     void AddPolygon()
@@ -103,7 +124,7 @@ public class GameManager : MonoBehaviour
             var countKey = line.midpoint;
             linesSet.Add(line);
             if (!linesCount.ContainsKey(countKey)) linesCount[countKey] = 0;
-            linesCount[line.midpoint]++;
+            linesCount[countKey]++;
         }
     }
 
@@ -217,28 +238,67 @@ public class GameManager : MonoBehaviour
         return visited;
     }
 
-    public void HandleCollision(PolygonPrefab polygon, EnemyPrefab enemy)
+    void HandleCollisions()
     {
-        var polygonDied = polygon.TakeDamage(enemy.polygon.vertices);
-        var enemyDied = enemy.TakeDamage(polygon.polygon.vertices);
+        Queue<PolygonPrefab> deadPolygons = new();
 
-        if (enemyDied)
+        HashSet<EnemyPrefab> deadEnemiesSet = new();
+        Queue<EnemyPrefab> deadEnemies = new();
+
+        foreach (var collision in collisionRecord)
         {
-            enemyCount--;
+            var polygon = collision.Key;
+            foreach (var enemy in collision.Value)
+            {
+                // ignore dead blocks
+                if (polygon.IsDead() || enemy.IsDead()) continue;
+
+                // determine collision damage
+                polygon.TakeDamage(enemy.polygon.vertices);
+                enemy.TakeDamage(polygon.polygon.vertices);
+
+                // keep track of dead entities
+                if (enemy.IsDead() && !deadEnemiesSet.Contains(enemy))
+                {
+                    deadEnemiesSet.Add(enemy);
+                    deadEnemies.Enqueue(enemy);
+                }
+
+                if (polygon.IsDead()) deadPolygons.Enqueue(polygon);
+            }
+        }
+
+        // reset collision record for next frame;
+        collisionRecord.Clear();
+
+        // destroy enemies
+        enemyCount -= deadEnemies.Count;
+        while (deadEnemies.Count > 0)
+        {
+            var enemy = deadEnemies.Dequeue();
             Destroy(enemy.gameObject);
         }
 
-        if (polygonDied)
+        // destroy polygons
+        while (deadPolygons.Count > 0)
         {
+            var polygon = deadPolygons.Dequeue();
             if (polygon.polygon.root)
             {
-                Debug.Log("game over");
-            } else
+                Debug.Log("Game Over");
+            }
+            else
             {
                 DeletePolygon(polygon);
                 RemoveUnreachable();
             }
         }
+    }
+
+    public void RecordCollision(PolygonPrefab polygon, EnemyPrefab enemy)
+    {
+        if (!collisionRecord.ContainsKey(polygon)) collisionRecord[polygon] = new();
+        collisionRecord[polygon].Add(enemy);
     }
 
     int EnemyVertices(int level)

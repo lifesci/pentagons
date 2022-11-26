@@ -96,6 +96,11 @@ public class PolygonPrefab : MonoBehaviour
     {
         health -= damage;
         SetColour();
+        return IsDead();
+    }
+
+    public virtual bool IsDead()
+    {
         return health <= 0;
     }
 }

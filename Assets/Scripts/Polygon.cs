@@ -205,8 +205,6 @@ public class Line
 
     public readonly Polygon polygon;
 
-    bool negativeHash;
-
     public Line(Vector2 p0, Vector2 p1, Polygon polygon)
     {
         this.polygon = polygon;
@@ -220,11 +218,9 @@ public class Line
         if (p0.x != p1.x)
         {
             (start, end) = p0.x < p1.x ? (p0, p1) : (p1, p0);
-            negativeHash = true;
         } else
         {
             (start, end) = p0.y < p1.y ? (p0, p1) : (p1, p0);
-            negativeHash = false;
         }
         var xMid = (end.x - start.x) / 2;
         var yMid = (end.y - start.y) / 2;

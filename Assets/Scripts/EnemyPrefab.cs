@@ -7,8 +7,6 @@ public class EnemyPrefab : PolygonPrefab
     public Rigidbody2D rigidBody { get; private set; }
     public GameManager gameManager;
 
-
-
     private void Awake()
     {
         lineRenderer = GetComponent<LineRenderer>();
@@ -47,7 +45,7 @@ public class EnemyPrefab : PolygonPrefab
         if (gameObject.CompareTag("Player"))
         {
             var polygon = gameObject.GetComponent<PolygonPrefab>();
-            gameManager.HandleCollision(polygon, this);
+            gameManager.RecordCollision(polygon, this);
         }
     }
 
