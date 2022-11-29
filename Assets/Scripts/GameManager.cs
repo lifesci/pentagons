@@ -28,12 +28,9 @@ public class GameManager : MonoBehaviour
 
     int enemyCount;
 
-    GameObject mainCamera;
-
     // Start is called before the first frame update
     void Start()
     {
-        mainCamera = GameObject.Find("Main Camera");
         level = 1;
         startLevel = true;
         vertices = MainManager.Instance.polygonSize;
@@ -251,7 +248,8 @@ public class GameManager : MonoBehaviour
             foreach (var enemy in collision.Value)
             {
                 // ignore dead blocks
-                if (polygon.IsDead() || enemy.IsDead()) continue;
+                if (polygon.IsDead()) break;
+                if (enemy.IsDead()) continue;
 
                 // determine collision damage
                 polygon.TakeDamage(enemy.polygon.vertices);
@@ -263,9 +261,8 @@ public class GameManager : MonoBehaviour
                     deadEnemiesSet.Add(enemy);
                     deadEnemies.Enqueue(enemy);
                 }
-
-                if (polygon.IsDead()) deadPolygons.Enqueue(polygon);
             }
+            if (polygon.IsDead()) deadPolygons.Enqueue(polygon);
         }
 
         // reset collision record for next frame;
@@ -290,9 +287,9 @@ public class GameManager : MonoBehaviour
             else
             {
                 DeletePolygon(polygon);
-                RemoveUnreachable();
             }
         }
+        RemoveUnreachable();
     }
 
     public void RecordCollision(PolygonPrefab polygon, EnemyPrefab enemy)
