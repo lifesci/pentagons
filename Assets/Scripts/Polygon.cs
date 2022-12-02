@@ -76,12 +76,22 @@ public class Polygon
         var neighbour = line.polygon;
         if (neighbour is not null)
         {
-            AddNeighbour(neighbour);
-            if (!ghost)
-            {
-                neighbour.AddNeighbour(this);
-            }
+            SetNeighbour(neighbour);
         }
+    }
+
+    void SetNeighbour(Polygon neighbour)
+    {
+        AddNeighbour(neighbour);
+        if (!ghost)
+        {
+            neighbour.AddNeighbour(this);
+        }
+    }
+
+    public void AddNeighbour(Polygon neighbour)
+    {
+        neighbours.Add(neighbour);
     }
 
     public void UnGhost()
@@ -101,11 +111,6 @@ public class Polygon
     public void SetGhost(bool val)
     {
         ghost = val;
-    }
-
-    void AddNeighbour(Polygon polygon)
-    {
-        neighbours.Add(polygon);
     }
 
     public void RemoveNeighbour(Polygon polygon)

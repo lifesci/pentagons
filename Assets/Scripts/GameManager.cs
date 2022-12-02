@@ -49,12 +49,12 @@ public class GameManager : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             AddPolygon();
-            RemoveGhost();
+            DestroyGhost();
         }
         else if (Input.GetMouseButtonDown(1))
         {
             DeleteClosestPolygon();
-            RemoveGhost();
+            DestroyGhost();
         } else
         {
             AddGhostPolygon();
@@ -80,26 +80,19 @@ public class GameManager : MonoBehaviour
 
     void AddPolygon()
     {
-        var mousePos = GetMousePos();
-        var line = Helpers.ClosestFreeLine(mousePos, linesSet, linesCount);
-        if (line is not null)
-        {
-            var virtualPolygon = polygonFactory.CreateVirtual(vertices, line, linesSet);
+        // do nothing if ghost is not set
+        if (ghost is null) return;
 
-            // intersection not allowed
-            foreach (var existingClone in polygonClones)
-            {
-                if (virtualPolygon.Intersects(existingClone.polygon)) return;
-            }
-
-            var polygonPrefab = polygonFactory.CreateFromVirtual(virtualPolygon);
-            AddPolygonLines(polygonPrefab);
-        }
+        // convert ghost to placed polygon
+        var newPrefab = ghost;
+        UnsetGhost();
+        AddPolygonLines(newPrefab);
+        newPrefab.UnGhost();
     }
 
     void AddRootPolygon(Vector2 p0, Vector2 p1)
     {
-        var polygonPrefab = polygonFactory.Create(vertices, p0, p1, linesSet);
+        var polygonPrefab = polygonFactory.Create(vertices, p0, p1, linesSet, root: true);
         polygonPrefab.polygon.SetRoot(true);
         AddPolygonLines(polygonPrefab);
         root = polygonPrefab;
@@ -176,7 +169,7 @@ public class GameManager : MonoBehaviour
         Destroy(prefab.gameObject);
     }
 
-    void RemoveGhost()
+    void DestroyGhost()
     {
         if (ghost is not null)
         {
@@ -187,12 +180,18 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    void UnsetGhost()
+    {
+        ghost = null;
+        ghostLine = null;
+    }
+
     void AddGhostPolygon()
     {
         var mousePos = GetMousePos();
         var line = Helpers.ClosestFreeLine(mousePos, linesSet, linesCount);
         if (line is null || line == ghostLine) return;
-        RemoveGhost();
+        DestroyGhost();
         var ghostPolygon = polygonFactory.CreateVirtualGhost(vertices, line, linesSet);
         foreach (var polygonPrefab in polygonClones)
         {
@@ -311,7 +310,7 @@ public class GameManager : MonoBehaviour
         if (deletedPolygons)
         {
             RemoveUnreachable();
-            RemoveGhost();
+            DestroyGhost();
         }
     }
 

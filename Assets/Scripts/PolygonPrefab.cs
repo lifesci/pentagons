@@ -26,6 +26,7 @@ public class PolygonPrefab : MonoBehaviour
         healthyColour = Color.green;
         deadColour = Color.red;
         ghostColor = Color.grey;
+        ghostColor.a = 0.5f;
     }
 
     public void Initialize(Polygon polygon)
@@ -81,6 +82,12 @@ public class PolygonPrefab : MonoBehaviour
         }
         lineRenderer.startColor = colour;
         lineRenderer.endColor = colour;
+    }
+
+    public void UnGhost()
+    {
+        polygon.UnGhost();
+        SetColour();
     }
 
     protected void Draw()
