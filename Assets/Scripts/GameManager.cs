@@ -21,6 +21,9 @@ public class GameManager : MonoBehaviour
 
     public PolygonPrefab root { get; private set; }
 
+    PolygonPrefab ghost;
+    Line ghostLine;
+
     int vertices;
 
     int level;
@@ -46,10 +49,12 @@ public class GameManager : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             AddPolygon();
+            RemoveGhost();
         }
         else if (Input.GetMouseButtonDown(1))
         {
             DeleteClosestPolygon();
+            RemoveGhost();
         } else
         {
             AddGhostPolygon();
@@ -73,16 +78,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    int TotalLines()
-    {
-        var total = 0;
-        foreach (var item in linesCount)
-        {
-            total += item.Value;
-        }
-        return total;
-    }
-
     void AddPolygon()
     {
         var mousePos = GetMousePos();
@@ -94,7 +89,7 @@ public class GameManager : MonoBehaviour
             // intersection not allowed
             foreach (var existingClone in polygonClones)
             {
-                if (existingClone.polygon.Intersects(virtualPolygon)) return;
+                if (virtualPolygon.Intersects(existingClone.polygon)) return;
             }
 
             var polygonPrefab = polygonFactory.CreateFromVirtual(virtualPolygon);
@@ -145,7 +140,7 @@ public class GameManager : MonoBehaviour
     {
         foreach(var neighbour in polygon.neighbours)
         {
-            neighbour.neighbours.Remove(polygon);
+            neighbour.RemoveNeighbour(polygon);
         }
     }
 
@@ -181,9 +176,30 @@ public class GameManager : MonoBehaviour
         Destroy(prefab.gameObject);
     }
 
+    void RemoveGhost()
+    {
+        if (ghost is not null)
+        {
+            var oldGhost = ghost;
+            ghost = null;
+            ghostLine = null;
+            Destroy(oldGhost.gameObject);
+        }
+    }
+
     void AddGhostPolygon()
     {
         var mousePos = GetMousePos();
+        var line = Helpers.ClosestFreeLine(mousePos, linesSet, linesCount);
+        if (line is null || line == ghostLine) return;
+        RemoveGhost();
+        var ghostPolygon = polygonFactory.CreateVirtualGhost(vertices, line, linesSet);
+        foreach (var polygonPrefab in polygonClones)
+        {
+            if (ghostPolygon.Intersects(polygonPrefab.polygon)) return;
+        }
+        ghost = polygonFactory.CreateGhost(ghostPolygon);
+        ghostLine = line;
     }
 
     Vector2 GetMousePos()
@@ -211,9 +227,9 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // get set of polygons reachable from the root
     HashSet<Polygon> GetReachablePolygons()
     {
+        // get set of polygons reachable from the root using BFS
         Queue<Polygon> toVisit = new();
         HashSet<Polygon> visited = new();
 
@@ -276,6 +292,8 @@ public class GameManager : MonoBehaviour
             Destroy(enemy.gameObject);
         }
 
+        var deletedPolygons = deadPolygons.Count > 0;
+
         // destroy polygons
         while (deadPolygons.Count > 0)
         {
@@ -289,7 +307,12 @@ public class GameManager : MonoBehaviour
                 DeletePolygon(polygon);
             }
         }
-        RemoveUnreachable();
+
+        if (deletedPolygons)
+        {
+            RemoveUnreachable();
+            RemoveGhost();
+        }
     }
 
     public void RecordCollision(PolygonPrefab polygon, EnemyPrefab enemy)

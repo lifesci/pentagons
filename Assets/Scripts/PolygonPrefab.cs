@@ -14,6 +14,7 @@ public class PolygonPrefab : MonoBehaviour
 
     protected Color healthyColour;
     protected Color deadColour;
+    Color ghostColor;
 
     protected float lineWidth = 0.1f;
 
@@ -24,6 +25,7 @@ public class PolygonPrefab : MonoBehaviour
 
         healthyColour = Color.green;
         deadColour = Color.red;
+        ghostColor = Color.grey;
     }
 
     public void Initialize(Polygon polygon)
@@ -67,8 +69,16 @@ public class PolygonPrefab : MonoBehaviour
 
     public void SetColour()
     {
-        var distance = (float)Mathf.Max(health - 1, 0) / (polygon.vertices - 1);
-        var colour = Color.Lerp(deadColour, healthyColour, distance);
+        Color colour;
+        if (polygon.ghost)
+        {
+            colour = ghostColor;
+        } else
+        {
+
+            var distance = (float)Mathf.Max(health - 1, 0) / (polygon.vertices - 1);
+            colour = Color.Lerp(deadColour, healthyColour, distance);
+        }
         lineRenderer.startColor = colour;
         lineRenderer.endColor = colour;
     }

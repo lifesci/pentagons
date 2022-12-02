@@ -45,7 +45,9 @@ public class EnemyPrefab : PolygonPrefab
         if (gameObject.CompareTag("Player"))
         {
             var polygon = gameObject.GetComponent<PolygonPrefab>();
-            gameManager.RecordCollision(polygon, this);
+
+            // ignore collisions with ghosts
+            if (!polygon.polygon.ghost) gameManager.RecordCollision(polygon, this);
         }
     }
 

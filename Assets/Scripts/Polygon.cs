@@ -18,18 +18,23 @@ public class Polygon
     public readonly float bboxYMax = float.MinValue;
 
     public bool root { get; private set; } = false;
+    public bool ghost { get; private set; } = false;
 
     public Line[] lines { get; private set; }
     public Vector2[] points { get; private set; }
     public HashSet<Polygon> neighbours { get; private set; } = new();
 
-    public Polygon(int vertices, Line line, HashSet<Line> linesSet)
+    public Polygon(int vertices, Line line, HashSet<Line> linesSet, bool root = false, bool ghost = false)
     {
         // populate geometric properties
         intAngle = (vertices - 2) * 180f / vertices;
         intComplement = Helpers.halfAngle - intAngle;
         edgeLength = line.length;
         this.vertices = vertices;
+
+        // set special properties
+        this.root = root;
+        this.ghost = ghost;
 
         // populate lines
         lines = new Line[vertices];
@@ -72,6 +77,18 @@ public class Polygon
         if (neighbour is not null)
         {
             AddNeighbour(neighbour);
+            if (!ghost)
+            {
+                neighbour.AddNeighbour(this);
+            }
+        }
+    }
+
+    public void UnGhost()
+    {
+        ghost = false;
+        foreach (var neighbour in neighbours)
+        {
             neighbour.AddNeighbour(this);
         }
     }
@@ -81,12 +98,17 @@ public class Polygon
         root = val;
     }
 
+    public void SetGhost(bool val)
+    {
+        ghost = val;
+    }
+
     void AddNeighbour(Polygon polygon)
     {
         neighbours.Add(polygon);
     }
 
-    void RemoveNeighbour(Polygon polygon)
+    public void RemoveNeighbour(Polygon polygon)
     {
         if (neighbours.Contains(polygon))
         {
@@ -129,7 +151,10 @@ public class Polygon
         if ((mappedStart is not null) && (mappedStart == mappedEnd))
         {
             AddNeighbour(mappedStart);
-            mappedStart.AddNeighbour(this);
+            if (!ghost)
+            {
+                mappedStart.AddNeighbour(this);
+            }
         }
 
         return new(start, end, this);
@@ -146,35 +171,27 @@ public class Polygon
         return new Vector2(start.x + Mathf.Cos(angle)*edgeLength, start.y + Mathf.Sin(angle)*edgeLength);
     }
 
-    public bool ContainsPoint(Vector2 point)
+    public bool ContainsPoint(Vector2 pointToCheck)
     {
         // check bounding box
-        if (!BBoxContainsPoint(point)) return false;
+        if (!BBoxContainsPoint(pointToCheck)) return false;
 
-        var setMeasure = false;
-        var positive = true;
-
-        for (var i = 0; i < lines.Length; i++)
+        var referenceVec = points[0] - pointToCheck;
+        var minAngle = float.MaxValue;
+        var maxAngle = float.MinValue;
+        for (var i = 0; i < points.Length; i++)
         {
-            var line = lines[i];
-            var measure = (point.x - line.p0.x) * (line.p1.y - line.p0.y) - (point.y - line.p0.y) * (line.p1.x - line.p0.x);
+            var point = points[i];
 
-            // point is on line
-            if (measure == 0) return false;
+            // exclude shared vertices
+            if (pointToCheck == point) return false;
 
-            if (!setMeasure)
-            {
-                positive = measure > 0;
-                setMeasure = true;
-            } else
-            {
-                if (!((measure > 0) == positive))
-                {
-                    return false;
-                }
-            }
+            var vec = point - pointToCheck;
+            var angle = Vector2.SignedAngle(referenceVec, vec);
+            minAngle = Mathf.Min(minAngle, angle);
+            maxAngle = Mathf.Max(maxAngle, angle);
         }
-        return true;
+        return (maxAngle - minAngle) > Helpers.halfAngle;
     }
 
     bool BBoxContainsPoint(Vector2 point)

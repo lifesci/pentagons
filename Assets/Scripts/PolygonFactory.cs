@@ -51,6 +51,18 @@ public class PolygonFactory : MonoBehaviour
         return new Polygon(vertices, line, linesSet);
     }
 
+    public Polygon CreateVirtualGhost(int vertices, Line line, HashSet<Line> linesSet)
+    {
+        return new Polygon(vertices, line, linesSet, ghost: true);
+    }
+
+    public PolygonPrefab CreateGhost(Polygon virtualPoly)
+    {
+        virtualPoly.SetGhost(true);
+        var polygonPrefab = CreateFromVirtual(virtualPoly);
+        return polygonPrefab;
+    }
+
     public EnemyPrefab CreateEnemy(int vertices, Line line)
     {
         var enemyObj = Instantiate(enemyPrefab, position, rotation);
