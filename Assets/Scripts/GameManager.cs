@@ -36,7 +36,7 @@ public class GameManager : MonoBehaviour
     {
         level = 1;
         startLevel = true;
-        vertices = MainManager.Instance.polygonSize;
+        vertices = MainManager.Instance is null ? 5 : MainManager.Instance.polygonSize;
         polygonFactory = GameObject.Find("Polygon Factory").GetComponent<PolygonFactory>();
         enemySpawner = GameObject.Find("Enemy Spawner").GetComponent<EnemySpawner>();
         AddRootPolygon(p0, p1);
