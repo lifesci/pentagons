@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -31,9 +33,39 @@ public class GameManager : MonoBehaviour
 
     int enemyCount;
 
-    // Start is called before the first frame update
+    bool paused;
+    bool gameOver;
+
+    float timeScale;
+
+    // in-game menu objects and controls
+    [SerializeField] GameObject gameOverMenu;
+    [SerializeField] GameObject pauseMenu;
+    Button gameOverMainMenuButton;
+    Button pauseMainMenuButton;
+    Button resumeButton;
+    TMPro.TMP_Text scoreText;
+
     void Start()
     {
+        // get menu objects
+        gameOverMainMenuButton = GameObject.Find("Game Over Main Menu Button").GetComponent<Button>();
+        pauseMainMenuButton = GameObject.Find("Pause Main Menu Button").GetComponent<Button>();
+        resumeButton = GameObject.Find("Resume Button").GetComponent<Button>();
+        scoreText = GameObject.Find("Score Text").GetComponent<TMPro.TMP_Text>();
+
+        // set button actions
+        resumeButton.onClick.AddListener(UnPause);
+        pauseMainMenuButton.onClick.AddListener(GoToMainMenu);
+        gameOverMainMenuButton.onClick.AddListener(GoToMainMenu);
+
+        timeScale = Time.timeScale;
+        paused = false;
+        gameOver = false;
+
+        gameOverMenu.SetActive(gameOver);
+        pauseMenu.SetActive(paused);
+
         level = 1;
         startLevel = true;
         vertices = MainManager.Instance is null ? 5 : MainManager.Instance.polygonSize;
@@ -42,24 +74,65 @@ public class GameManager : MonoBehaviour
         AddRootPolygon(p0, p1);
     }
 
-    // Update is called once per frame
     void Update()
     {
-        HandleCollisions();
-        if (Input.GetMouseButtonDown(0))
+        if (!(paused || gameOver))
         {
-            AddPolygon();
-            DestroyGhost();
+            HandleCollisions();
+            if (Input.GetMouseButtonDown(0))
+            {
+                AddPolygon();
+                DestroyGhost();
+            }
+            else if (Input.GetMouseButtonDown(1))
+            {
+                DeleteClosestPolygon();
+                DestroyGhost();
+            } else
+            {
+                AddGhostPolygon();
+            }
+            CheckStartLevel();
         }
-        else if (Input.GetMouseButtonDown(1))
+
+        if (!gameOver && Input.GetKeyDown(KeyCode.Escape))
         {
-            DeleteClosestPolygon();
-            DestroyGhost();
-        } else
-        {
-            AddGhostPolygon();
+            if (!paused)
+            {
+                Pause();
+            } else
+            {
+                UnPause();
+            }
         }
-        CheckStartLevel();
+
+        if (gameOver) GameOver();
+    }
+
+    void GameOver()
+    {
+        Time.timeScale = 0;
+        gameOverMenu.SetActive(true);
+        scoreText.SetText("score: 0");
+    }
+
+    void Pause()
+    {
+        Time.timeScale = 0;
+        pauseMenu.SetActive(true);
+        paused = true;
+    }
+
+    void UnPause()
+    {
+        Time.timeScale = timeScale;
+        pauseMenu.SetActive(false);
+        paused = false;
+    }
+
+    void GoToMainMenu()
+    {
+        SceneManager.LoadScene("Menu Scene");
     }
 
     void CheckStartLevel()
@@ -300,6 +373,7 @@ public class GameManager : MonoBehaviour
             if (polygon.polygon.root)
             {
                 Debug.Log("Game Over");
+                gameOver = true;
             }
             else
             {

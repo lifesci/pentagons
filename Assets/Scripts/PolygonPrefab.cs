@@ -10,11 +10,14 @@ public class PolygonPrefab : MonoBehaviour
 
     protected Vector2[] relativePoints;
 
-    public int health;
+    public int maxHealth { get; protected set; }
+    public int health { get; protected set; }
+    public int damage { get; protected set; }
 
     protected Color healthyColour;
     protected Color deadColour;
-    Color ghostColor;
+    Color ghostColour;
+    Color rootColour;
 
     protected float lineWidth = 0.1f;
 
@@ -25,14 +28,17 @@ public class PolygonPrefab : MonoBehaviour
 
         healthyColour = Color.green;
         deadColour = Color.red;
-        ghostColor = Color.grey;
-        ghostColor.a = 0.5f;
+        ghostColour = Color.grey;
+        ghostColour.a = 0.5f;
+        rootColour = Color.cyan;
     }
 
     public void Initialize(Polygon polygon)
     {
         this.polygon = polygon;
-        health = polygon.vertices;
+        maxHealth = polygon.vertices;
+        damage = polygon.vertices;
+        health = maxHealth;
         gameObject.transform.position = polygon.centroid;
 
         SetRelativePoints();
@@ -73,11 +79,14 @@ public class PolygonPrefab : MonoBehaviour
         Color colour;
         if (polygon.ghost)
         {
-            colour = ghostColor;
+            colour = ghostColour;
+        } else if (polygon.root)
+        {
+            colour = rootColour;
         } else
         {
 
-            var distance = (float)Mathf.Max(health - 1, 0) / (polygon.vertices - 1);
+            var distance = (float)Mathf.Max(health - 1, 0) / (maxHealth - 1);
             colour = Color.Lerp(deadColour, healthyColour, distance);
         }
         lineRenderer.startColor = colour;
@@ -99,7 +108,7 @@ public class PolygonPrefab : MonoBehaviour
 
             // unit vector from point to centroid
             var relativeVec = -relativePoint.normalized;
-            var adjustmentFactor = lineWidth/ Mathf.Sin(Helpers.Deg2Rad(polygon.intAngle)/ 2)/2;
+            var adjustmentFactor = lineWidth/Mathf.Sin(Helpers.Deg2Rad(polygon.intAngle)/2)/2;
             var adjustment = relativeVec * adjustmentFactor;
 
             var point = relativePoint + adjustment;
@@ -109,9 +118,9 @@ public class PolygonPrefab : MonoBehaviour
         lineRenderer.SetPositions(points3D);
     }
 
-    public virtual bool TakeDamage(int damage)
+    public virtual bool TakeDamage(int damageTaken)
     {
-        health -= damage;
+        health -= damageTaken;
         SetColour();
         return IsDead();
     }

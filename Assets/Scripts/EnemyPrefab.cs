@@ -51,9 +51,9 @@ public class EnemyPrefab : PolygonPrefab
         }
     }
 
-    public override bool TakeDamage(int damage)
+    public override bool TakeDamage(int damageTaken)
     {
-        health -= damage;
+        health -= damageTaken;
         SetColour();
         return health <= 0;
     }
