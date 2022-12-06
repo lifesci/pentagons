@@ -17,11 +17,7 @@ public static class Helpers
 
     public static GameManager GameManager()
     {
-        if (gameManager is null)
-        {
-            gameManager = GameObject.Find("Game Manager").GetComponent<GameManager>();
-        }
-        return gameManager;
+        return GameObject.Find("Game Manager").GetComponent<GameManager>();
     }
 
     public static float Round(float val, int precision)
