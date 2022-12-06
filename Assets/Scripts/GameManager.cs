@@ -62,9 +62,7 @@ public class GameManager : MonoBehaviour
     // paused and game over flags
     bool paused;
     bool gameOver;
-
-    // game time scale, used to resume after pause
-    float timeScale;
+    bool calledGameOver;
 
     // number of polygons available to the player
     int _inventory;
@@ -109,12 +107,10 @@ public class GameManager : MonoBehaviour
         pauseMainMenuButton.onClick.AddListener(GoToMainMenu);
         gameOverMainMenuButton.onClick.AddListener(GoToMainMenu);
 
-        // get time scale
-        timeScale = Time.timeScale;
-
         // init paused and game over flags
         paused = false;
         gameOver = false;
+        calledGameOver = false;
 
         // deactivate paused and game over menus
         gameOverMenu.SetActive(gameOver);
@@ -168,7 +164,11 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if (gameOver) GameOver();
+        if (gameOver && !calledGameOver)
+        {
+            GameOver();
+            calledGameOver = true;
+        }
     }
 
     void GameOver()
@@ -187,14 +187,14 @@ public class GameManager : MonoBehaviour
 
     void UnPause()
     {
-        Time.timeScale = timeScale;
+        Time.timeScale = Helpers.timeScale;
         pauseMenu.SetActive(false);
         paused = false;
     }
 
     void GoToMainMenu()
     {
-        Time.timeScale = timeScale;
+        Time.timeScale = Helpers.timeScale;
         SceneManager.LoadScene("Menu Scene");
     }
 

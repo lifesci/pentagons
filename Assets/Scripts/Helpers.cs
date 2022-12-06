@@ -10,6 +10,8 @@ public static class Helpers
     public const float fullAngle = 360;
     public const float halfAngle = 180;
 
+    public const float timeScale = 1;
+
     static GameManager gameManager;
     static MainManager mainManager;
 
