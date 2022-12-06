@@ -9,34 +9,76 @@ public class GameManager : MonoBehaviour
     PolygonFactory polygonFactory;
     EnemySpawner enemySpawner;
 
+    // root polygon spawn points
     readonly Vector2 p0 = new(0, 0);
     readonly Vector2 p1 = new(1, 0);
 
     // free build time before enemies begin to spawn
     const int spawnDelay = 3;
 
+    // all player polygons
     HashSet<PolygonPrefab> polygonClones = new();
+
+    // all unique polygon lines
     HashSet<Line> linesSet = new();
+
+    // counts of geometrically unique lines
     Dictionary<Vector2, int> linesCount = new();
 
+    // contains collisions that occurred each frame, handled in update
     Dictionary<PolygonPrefab, HashSet<EnemyPrefab>> collisionRecord = new();
 
+    // root polygon reference
     public PolygonPrefab root { get; private set; }
 
+    // active ghost
     PolygonPrefab ghost;
     Line ghostLine;
 
+    // player polygon vertices
     int vertices;
 
-    int level;
+    // current level
+    int _level;
+    int level
+    {
+        get => _level;
+        set
+        {
+            _level = value;
+            if (levelText is not null)
+            {
+                levelText.SetText("Level: " + _level);
+            }
+        }
+    }
+
+    // flag to start a new level
     bool startLevel;
 
+    // number of active enemies
     int enemyCount;
 
+    // paused and game over flags
     bool paused;
     bool gameOver;
 
+    // game time scale, used to resume after pause
     float timeScale;
+
+    // number of polygons available to the player
+    int _inventory;
+    int inventory {
+        get => _inventory;
+        set
+        {
+            _inventory = value;
+            if (inventoryText is not null)
+            {
+                inventoryText.SetText("Inventory: " + _inventory);
+            }
+        }
+    }
 
     // in-game menu objects and controls
     [SerializeField] GameObject gameOverMenu;
@@ -46,6 +88,10 @@ public class GameManager : MonoBehaviour
     Button resumeButton;
     TMPro.TMP_Text scoreText;
 
+    // HUD objects
+    TMPro.TMP_Text inventoryText;
+    TMPro.TMP_Text levelText;
+
     void Start()
     {
         // get menu objects
@@ -54,23 +100,38 @@ public class GameManager : MonoBehaviour
         resumeButton = GameObject.Find("Resume Button").GetComponent<Button>();
         scoreText = GameObject.Find("Score Text").GetComponent<TMPro.TMP_Text>();
 
+        // get HUD objects
+        inventoryText = GameObject.Find("Inventory Text").GetComponent<TMPro.TMP_Text>();
+        levelText = GameObject.Find("Level Text").GetComponent<TMPro.TMP_Text>();
+
         // set button actions
         resumeButton.onClick.AddListener(UnPause);
         pauseMainMenuButton.onClick.AddListener(GoToMainMenu);
         gameOverMainMenuButton.onClick.AddListener(GoToMainMenu);
 
+        // get time scale
         timeScale = Time.timeScale;
+
+        // init paused and game over flags
         paused = false;
         gameOver = false;
 
+        // deactivate paused and game over menus
         gameOverMenu.SetActive(gameOver);
         pauseMenu.SetActive(paused);
 
+        // init level and flag
         level = 1;
         startLevel = true;
+
+        // set vertices from menu selection; default to 5
         vertices = MainManager.Instance is null ? 5 : MainManager.Instance.polygonSize;
+
+        // get polygon factory and enemy spawner
         polygonFactory = GameObject.Find("Polygon Factory").GetComponent<PolygonFactory>();
         enemySpawner = GameObject.Find("Enemy Spawner").GetComponent<EnemySpawner>();
+
+        // add root polygon
         AddRootPolygon(p0, p1);
     }
 
@@ -79,9 +140,10 @@ public class GameManager : MonoBehaviour
         if (!(paused || gameOver))
         {
             HandleCollisions();
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0) && inventory > 0)
             {
                 AddPolygon();
+                inventory--;
                 DestroyGhost();
             }
             else if (Input.GetMouseButtonDown(1))
@@ -132,6 +194,7 @@ public class GameManager : MonoBehaviour
 
     void GoToMainMenu()
     {
+        Time.timeScale = timeScale;
         SceneManager.LoadScene("Menu Scene");
     }
 
@@ -141,13 +204,14 @@ public class GameManager : MonoBehaviour
         {
             Debug.Log("Starting Level " + level);
             var enemyVertices = EnemyVertices(level);
+            inventory += enemyVertices / vertices + 1;
             enemyCount = enemySpawner.SpawnRandom(enemyVertices, 3);
             startLevel = false;
-            level++;
         }
         else if (!startLevel && enemyCount == 0)
         {
             startLevel = true;
+            level++;
         }
     }
 

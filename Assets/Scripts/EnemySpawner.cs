@@ -29,11 +29,11 @@ public class EnemySpawner : MonoBehaviour
     public int SpawnRandom(int totalVertices, int delay)
     {
         List<int> enemySizes = new();
-        var remainingVertices = totalVertices ;
+        var remainingVertices = totalVertices;
         while (remainingVertices > 0)
         {
             int vertices;
-            if (remainingVertices / minVertices < 2)
+            if (remainingVertices/minVertices < 2)
             {
                 vertices = remainingVertices;
             } else
