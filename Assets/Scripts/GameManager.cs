@@ -124,8 +124,8 @@ public class GameManager : MonoBehaviour
         vertices = MainManager.Instance is null ? 5 : MainManager.Instance.polygonSize;
 
         // get polygon factory and enemy spawner
-        polygonFactory = GameObject.Find("Polygon Factory").GetComponent<PolygonFactory>();
-        enemySpawner = GameObject.Find("Enemy Spawner").GetComponent<EnemySpawner>();
+        polygonFactory = gameObject.GetComponent<PolygonFactory>();
+        enemySpawner = gameObject.GetComponent<EnemySpawner>();
 
         // add root polygon
         AddRootPolygon(p0, p1);

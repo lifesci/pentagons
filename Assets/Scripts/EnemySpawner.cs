@@ -7,8 +7,6 @@ public class EnemySpawner : MonoBehaviour
     PolygonFactory polygonFactory;
     GameManager gameManager;
 
-    Vector2 root;
-
     const float interval = 1;
     const float distance = 10;
 
@@ -21,9 +19,8 @@ public class EnemySpawner : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        polygonFactory = GameObject.Find("Polygon Factory").GetComponent<PolygonFactory>();
-        gameManager = Helpers.GameManager();
-        this.root = gameManager.root.polygon.centroid;
+        polygonFactory = gameObject.GetComponent<PolygonFactory>();
+        gameManager = gameObject.GetComponent<GameManager>();
     }
 
     public int SpawnRandom(int totalVertices, int delay)
@@ -81,11 +78,15 @@ public class EnemySpawner : MonoBehaviour
         return new(p0, p1, null);
     }
 
+    Vector2 GetCentre() {
+        return gameManager.root.polygon.centroid;
+    }
+
     void ApplyForce(EnemyPrefab enemy)
     {
         var rigidBody = enemy.GetComponent<Rigidbody2D>();
 
-        var force = (root - enemy.polygon.centroid).normalized*forceMultiplier;
+        var force = (GetCentre() - enemy.polygon.centroid).normalized*forceMultiplier;
         rigidBody.AddForce(force);
         rigidBody.AddTorque(torque);
     }
