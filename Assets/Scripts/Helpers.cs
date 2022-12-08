@@ -7,13 +7,12 @@ public static class Helpers
     // minimum difference required for points to be distinct
     public const float epsilon = 0.0001f;
 
+    // useful trig constants
     public const float fullAngle = 360;
     public const float halfAngle = 180;
 
+    // base time scale
     public const float timeScale = 1;
-
-    static GameManager gameManager;
-    static MainManager mainManager;
 
     public static GameManager GameManager()
     {

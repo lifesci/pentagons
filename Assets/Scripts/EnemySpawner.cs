@@ -23,7 +23,7 @@ public class EnemySpawner : MonoBehaviour
         gameManager = gameObject.GetComponent<GameManager>();
     }
 
-    public int SpawnRandom(int totalVertices, int delay)
+    public int SpawnRandom(int totalVertices)
     {
         List<int> enemySizes = new();
         var remainingVertices = totalVertices;
@@ -54,13 +54,12 @@ public class EnemySpawner : MonoBehaviour
             remainingVertices -= vertices;
         }
 
-        StartCoroutine(SpawnRoutine(enemySizes, delay));
+        StartCoroutine(SpawnRoutine(enemySizes));
         return enemySizes.Count;
     }
 
-    IEnumerator SpawnRoutine(List<int> enemySizes, int delay)
+    IEnumerator SpawnRoutine(List<int> enemySizes)
     {
-        yield return new WaitForSeconds(delay);
         foreach (var vertices in enemySizes)
         {
             yield return new WaitForSeconds(interval);

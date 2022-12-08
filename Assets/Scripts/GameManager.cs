@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 
 public class GameManager : MonoBehaviour
 {
@@ -38,26 +39,19 @@ public class GameManager : MonoBehaviour
     // player polygon vertices
     int vertices;
 
-    // current level
-    int _level;
-    int level
-    {
-        get => _level;
-        set
-        {
-            _level = value;
-            if (levelText is not null)
-            {
-                levelText.SetText("Level: " + _level);
-            }
-        }
-    }
+    // player level and experience
+    int level = 1;
+    int xp = 0;
 
-    // flag to start a new level
-    bool startLevel;
+    // current round
+    int round = 0;
+
+    // flags to start and initialize rounds
+    bool startRound = false;
+    bool roundInitialized = false;
 
     // number of active enemies
-    int enemyCount;
+    int enemyCount = 0;
 
     // paused and game over flags
     bool paused;
@@ -88,7 +82,8 @@ public class GameManager : MonoBehaviour
 
     // HUD objects
     TMPro.TMP_Text inventoryText;
-    TMPro.TMP_Text levelText;
+    TMPro.TMP_Text roundText;
+    Button startRoundButton;
 
     void Start()
     {
@@ -100,12 +95,13 @@ public class GameManager : MonoBehaviour
 
         // get HUD objects
         inventoryText = GameObject.Find("Inventory Text").GetComponent<TMPro.TMP_Text>();
-        levelText = GameObject.Find("Level Text").GetComponent<TMPro.TMP_Text>();
+        startRoundButton = GameObject.Find("Start Round Button").GetComponent<Button>();
 
         // set button actions
         resumeButton.onClick.AddListener(UnPause);
         pauseMainMenuButton.onClick.AddListener(GoToMainMenu);
         gameOverMainMenuButton.onClick.AddListener(GoToMainMenu);
+        startRoundButton.onClick.AddListener(StartRound);
 
         // init paused and game over flags
         paused = false;
@@ -115,10 +111,6 @@ public class GameManager : MonoBehaviour
         // deactivate paused and game over menus
         gameOverMenu.SetActive(gameOver);
         pauseMenu.SetActive(paused);
-
-        // init level and flag
-        level = 1;
-        startLevel = true;
 
         // set vertices from menu selection; default to 5
         vertices = MainManager.Instance is null ? 5 : MainManager.Instance.polygonSize;
@@ -136,7 +128,11 @@ public class GameManager : MonoBehaviour
         if (!(paused || gameOver))
         {
             HandleCollisions();
-            if (Input.GetMouseButtonDown(0) && inventory > 0)
+            if (
+                Input.GetMouseButtonDown(0)
+                && inventory > 0
+                && EventSystem.current.currentSelectedGameObject != startRoundButton.gameObject
+            )
             {
                 AddPolygon();
                 inventory--;
@@ -150,7 +146,7 @@ public class GameManager : MonoBehaviour
             {
                 AddGhostPolygon();
             }
-            CheckStartLevel();
+            CheckStartRound();
         }
 
         if (!gameOver && Input.GetKeyDown(KeyCode.Escape))
@@ -175,7 +171,7 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 0;
         gameOverMenu.SetActive(true);
-        scoreText.SetText("score: 0");
+        scoreText.SetText("reached round " + round);
     }
 
     void Pause()
@@ -183,6 +179,10 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0;
         pauseMenu.SetActive(true);
         paused = true;
+        if (startRoundButton.IsActive())
+        {
+            startRoundButton.interactable = false;
+        }
     }
 
     void UnPause()
@@ -190,6 +190,10 @@ public class GameManager : MonoBehaviour
         Time.timeScale = Helpers.timeScale;
         pauseMenu.SetActive(false);
         paused = false;
+        if (startRoundButton.IsActive())
+        {
+            startRoundButton.interactable = true;
+        }
     }
 
     void GoToMainMenu()
@@ -198,21 +202,33 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene("Menu Scene");
     }
 
-    void CheckStartLevel()
+    void CheckStartRound()
     {
-        if (startLevel)
+        if (startRound)
         {
-            Debug.Log("Starting Level " + level);
-            var enemyVertices = EnemyVertices(level);
+            startRoundButton.gameObject.SetActive(false);
+            var enemyVertices = EnemyVertices();
+            enemyCount = enemySpawner.SpawnRandom(enemyVertices);
+            startRound = false;
+            roundInitialized = false;
+        }
+        else if (!roundInitialized && enemyCount == 0 && !gameOver)
+        {
+            round++;
+            var enemyVertices = EnemyVertices();
             inventory += enemyVertices / vertices + 1;
-            enemyCount = enemySpawner.SpawnRandom(enemyVertices, 3);
-            startLevel = false;
+            startRoundButton.gameObject.SetActive(true);
+            if (xp >= XPToNextLevel())
+            {
+                LevelUp();
+            }
+            roundInitialized = true;
         }
-        else if (!startLevel && enemyCount == 0)
-        {
-            startLevel = true;
-            level++;
-        }
+    }
+
+    void StartRound()
+    {
+        startRound = true;
     }
 
     void AddPolygon()
@@ -425,6 +441,7 @@ public class GameManager : MonoBehaviour
         while (deadEnemies.Count > 0)
         {
             var enemy = deadEnemies.Dequeue();
+            xp += enemy.polygon.vertices;
             Destroy(enemy.gameObject);
         }
 
@@ -458,8 +475,20 @@ public class GameManager : MonoBehaviour
         collisionRecord[polygon].Add(enemy);
     }
 
-    int EnemyVertices(int level)
+    int EnemyVertices()
     {
-        return 20 * level;
+        int roundSquare = Mathf.Max(round - 3, 0);
+        return 20 * round + (roundSquare)*(roundSquare);
+    }
+
+    int XPToNextLevel()
+    {
+        var nextLevel = level + 1;
+        return nextLevel * nextLevel + 40 * nextLevel;
+    }
+
+    void LevelUp()
+    {
+
     }
 }
