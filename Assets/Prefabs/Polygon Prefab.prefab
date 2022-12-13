@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7111956107824523910}
   - component: {fileID: 7114052173016723774}
   - component: {fileID: 6702703501913115315}
+  - component: {fileID: 1954714689754960950}
   m_Layer: 0
   m_Name: Polygon Prefab
   m_TagString: Player
@@ -143,7 +144,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 305e631fa112b6746a0a77f0401aa212, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 0
 --- !u!60 &6702703501913115315
 PolygonCollider2D:
   m_ObjectHideFlags: 0
@@ -174,3 +174,24 @@ PolygonCollider2D:
       - {x: -0.5877852, y: -0.80901706}
       - {x: 0.58778536, y: -0.80901694}
       - {x: 0.9510565, y: 0.30901712}
+--- !u!50 &1954714689754960950
+Rigidbody2D:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3085147377117033883}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDrag: 0
+  m_AngularDrag: 0
+  m_GravityScale: 0
+  m_Material: {fileID: 0}
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 0

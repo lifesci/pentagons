@@ -26,7 +26,7 @@ public class PolygonFactory : MonoBehaviour
     {
         var polygonObj = Instantiate(polygonPrefab, position, rotation);
         var polygon = polygonObj.GetComponent<PolygonPrefab>();
-        polygon.Initialize(new Polygon(vertices, new Line(p1, p0, null), linesSet, root: root));
+        polygon.Initialize(new Polygon(vertices, new Line(p1, p0, null), linesSet, root: root), enemy: false);
         return polygon;
     }
 
@@ -34,7 +34,7 @@ public class PolygonFactory : MonoBehaviour
     {
         var polygonClone = Instantiate(polygonPrefab, position, rotation);
         var polygonScript = polygonClone.GetComponent<PolygonPrefab>();
-        polygonScript.Initialize(virtualPoly);
+        polygonScript.Initialize(virtualPoly, enemy: false);
         return polygonScript;
     }
 
@@ -50,11 +50,11 @@ public class PolygonFactory : MonoBehaviour
         return polygonPrefab;
     }
 
-    public EnemyPrefab CreateEnemy(int vertices, Line line)
+    public PolygonPrefab CreateEnemy(int vertices, Line line)
     {
-        var enemyObj = Instantiate(enemyPrefab, position, rotation);
-        var enemy = enemyObj.GetComponent<EnemyPrefab>();
-        enemy.Initialize(new Polygon(vertices, line, new()));
+        var enemyObj = Instantiate(polygonPrefab, position, rotation);
+        var enemy = enemyObj.GetComponent<PolygonPrefab>();
+        enemy.Initialize(new Polygon(vertices, line, new()), enemy: true);
         return enemy;
     }
 }

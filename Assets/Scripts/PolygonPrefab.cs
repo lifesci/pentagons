@@ -6,6 +6,10 @@ public class PolygonPrefab : MonoBehaviour
 {
     protected LineRenderer lineRenderer;
     protected PolygonCollider2D polygonCollider;
+
+    GameManager gameManager;
+    Rigidbody2D rigidbody;
+
     public Polygon polygon { get; protected set; }
 
     protected Vector2[] relativePoints;
@@ -42,20 +46,29 @@ public class PolygonPrefab : MonoBehaviour
 
     protected Color healthyColour = Color.green;
     protected Color deadColour = Color.red;
+
+    Color enemyHealthyColour = Color.magenta;
+    Color enemyDeadColour = Color.black;
+
     Color ghostColour = Color.grey;
     Color rootColour = Color.cyan;
 
     protected float lineWidth = 0.1f;
 
+    public bool enemy { get; private set; }
+
     void Awake()
     {
         lineRenderer = GetComponent<LineRenderer>();
         polygonCollider = GetComponent<PolygonCollider2D>();
+        rigidbody = GetComponent<Rigidbody2D>();
+        gameManager = Helpers.GameManager();
     }
 
-    public void Initialize(Polygon polygon)
+    public void Initialize(Polygon polygon, bool enemy)
     {
         this.polygon = polygon;
+        this.enemy = enemy;
         maxHealth = polygon.vertices;
         damage = polygon.vertices;
         health = maxHealth;
@@ -64,6 +77,8 @@ public class PolygonPrefab : MonoBehaviour
         SetRelativePoints();
         InitializeCollider();
         InitializeRenderer();
+        InitializeRigidbody();
+        InitializeTag();
 
         Draw();
     }
@@ -83,6 +98,10 @@ public class PolygonPrefab : MonoBehaviour
         polygonCollider.isTrigger = true;
         polygonCollider.pathCount = 1;
         polygonCollider.SetPath(0, relativePoints);
+        if (enemy)
+        {
+            polygonCollider.isTrigger = true;
+        }
     }
 
     public void InitializeRenderer()
@@ -92,6 +111,50 @@ public class PolygonPrefab : MonoBehaviour
         lineRenderer.startWidth = lineWidth;
         lineRenderer.endWidth = lineWidth;
         SetColour();
+    }
+
+    void InitializeRigidbody()
+    {
+        if (enemy)
+        {
+            rigidbody.position = polygon.centroid;
+        } else
+        {
+            var oldRigidbody = rigidbody;
+            rigidbody = null;
+            Destroy(oldRigidbody);
+        }
+    }
+
+    void InitializeTag()
+    {
+        if (enemy)
+        {
+            gameObject.tag = "Enemy";
+        } else
+        {
+            gameObject.tag = "Player";
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        // only recognize collisions recognized by enemy polygons
+        if (!enemy) return;
+
+        var gameObject = collision.gameObject;
+
+        // only recognize collisions against player polygons
+        if (gameObject.CompareTag("Player"))
+        {
+            var polygonPrefab = gameObject.GetComponent<PolygonPrefab>();
+
+            // ignore collisions with ghosts
+            if (!polygonPrefab.polygon.ghost)
+            {
+                gameManager.RecordCollision(polygonPrefab, this);
+            }
+        }
     }
 
     public void SetColour()
@@ -107,7 +170,9 @@ public class PolygonPrefab : MonoBehaviour
         {
 
             var distance = (float)Mathf.Max(health - 1, 0) / (maxHealth - 1);
-            colour = Color.Lerp(deadColour, healthyColour, distance);
+            var startColour = enemy ? enemyDeadColour : deadColour;
+            var endColour = enemy ? enemyHealthyColour : healthyColour;
+            colour = Color.Lerp(startColour, endColour, distance);
         }
         if (lineRenderer is not null)
         {

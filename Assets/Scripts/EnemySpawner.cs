@@ -81,7 +81,7 @@ public class EnemySpawner : MonoBehaviour
         return gameManager.root.polygon.centroid;
     }
 
-    void ApplyForce(EnemyPrefab enemy)
+    void ApplyForce(PolygonPrefab enemy)
     {
         var rigidBody = enemy.GetComponent<Rigidbody2D>();
 

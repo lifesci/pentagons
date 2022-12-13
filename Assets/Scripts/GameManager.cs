@@ -27,7 +27,7 @@ public class GameManager : MonoBehaviour
     Dictionary<Vector2, int> linesCount = new();
 
     // contains collisions that occurred each frame, handled in update
-    Dictionary<PolygonPrefab, HashSet<EnemyPrefab>> collisionRecord = new();
+    Dictionary<PolygonPrefab, HashSet<PolygonPrefab>> collisionRecord = new();
 
     // root polygon reference
     public PolygonPrefab root { get; private set; }
@@ -475,8 +475,8 @@ public class GameManager : MonoBehaviour
     {
         Queue<PolygonPrefab> deadPolygons = new();
 
-        HashSet<EnemyPrefab> deadEnemiesSet = new();
-        Queue<EnemyPrefab> deadEnemies = new();
+        HashSet<PolygonPrefab> deadEnemiesSet = new();
+        Queue<PolygonPrefab> deadEnemies = new();
 
         foreach (var collision in collisionRecord)
         {
@@ -537,7 +537,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void RecordCollision(PolygonPrefab polygon, EnemyPrefab enemy)
+    public void RecordCollision(PolygonPrefab polygon, PolygonPrefab enemy)
     {
         if (!collisionRecord.ContainsKey(polygon)) collisionRecord[polygon] = new();
         collisionRecord[polygon].Add(enemy);
