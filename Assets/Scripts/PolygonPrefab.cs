@@ -10,14 +10,40 @@ public class PolygonPrefab : MonoBehaviour
 
     protected Vector2[] relativePoints;
 
-    public int maxHealth { get; protected set; }
-    public int health { get; protected set; }
+    int _maxHealth;
+    public int maxHealth {
+        get {
+            return _maxHealth;
+        }
+
+        protected set
+        {
+            _maxHealth = value;
+            SetColour();
+        }
+    }
+
+    int _health;
+    public int health
+    {
+        get
+        {
+            return _health;
+        }
+
+        set
+        {
+            _health = value;
+            SetColour();
+        }
+    }
+
     public int damage { get; protected set; }
 
-    protected Color healthyColour;
-    protected Color deadColour;
-    Color ghostColour;
-    Color rootColour;
+    protected Color healthyColour = Color.green;
+    protected Color deadColour = Color.red;
+    Color ghostColour = Color.grey;
+    Color rootColour = Color.cyan;
 
     protected float lineWidth = 0.1f;
 
@@ -25,12 +51,6 @@ public class PolygonPrefab : MonoBehaviour
     {
         lineRenderer = GetComponent<LineRenderer>();
         polygonCollider = GetComponent<PolygonCollider2D>();
-
-        healthyColour = Color.green;
-        deadColour = Color.red;
-        ghostColour = Color.grey;
-        ghostColour.a = 0.5f;
-        rootColour = Color.cyan;
     }
 
     public void Initialize(Polygon polygon)
@@ -89,8 +109,11 @@ public class PolygonPrefab : MonoBehaviour
             var distance = (float)Mathf.Max(health - 1, 0) / (maxHealth - 1);
             colour = Color.Lerp(deadColour, healthyColour, distance);
         }
-        lineRenderer.startColor = colour;
-        lineRenderer.endColor = colour;
+        if (lineRenderer is not null)
+        {
+            lineRenderer.startColor = colour;
+            lineRenderer.endColor = colour;
+        }
     }
 
     public void UnGhost()
@@ -121,12 +144,45 @@ public class PolygonPrefab : MonoBehaviour
     public virtual bool TakeDamage(int damageTaken)
     {
         health -= damageTaken;
-        SetColour();
         return IsDead();
     }
 
     public virtual bool IsDead()
     {
         return health <= 0;
+    }
+
+    public void ApplyHeartbeat()
+    {
+        maxHealth += 2;
+    }
+
+    public void ApplyUpgrade(Upgrade upgrade)
+    {
+        if (!upgrade.active || upgrade.applied) return;
+        switch(upgrade.name)
+        {
+            case UpgradeManager.UpgradeName.heartbeat:
+                ApplyHeartbeat();
+                break;
+            case UpgradeManager.UpgradeName.cooperation:
+                break;
+            case UpgradeManager.UpgradeName.reinforce:
+                break;
+            case UpgradeManager.UpgradeName.warehouse:
+                break;
+            default:
+                break;
+        }
+        upgrade.SetApplied();
+        upgrade.SetActive();
+    }
+
+    public void ApplyAllUpgrades()
+    {
+        foreach(var upgrade in UpgradeManager.GetUpgradeList())
+        {
+            ApplyUpgrade(upgrade);
+        }
     }
 }

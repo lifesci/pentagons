@@ -65,4 +65,12 @@ public static class Helpers
         }
         return closestFreeLine;
     }
+
+    public static T TakeRandom<T>(List<T> l)
+    {
+        var index = Random.Range(0, l.Count);
+        var elem = l[index];
+        l.RemoveAt(index);
+        return elem;
+    }
 }

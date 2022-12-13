@@ -58,6 +58,9 @@ public class GameManager : MonoBehaviour
     bool gameOver;
     bool calledGameOver;
 
+    // upgrade menu flags
+    bool pickingUpgrade = false;
+
     // number of polygons available to the player
     int _inventory;
     int inventory {
@@ -85,6 +88,10 @@ public class GameManager : MonoBehaviour
     TMPro.TMP_Text roundText;
     Button startRoundButton;
 
+    // Upgrade objects
+    [SerializeField] GameObject upgradeCard;
+    [SerializeField] GameObject upgradeMenu;
+
     void Start()
     {
         // get menu objects
@@ -108,9 +115,10 @@ public class GameManager : MonoBehaviour
         gameOver = false;
         calledGameOver = false;
 
-        // deactivate paused and game over menus
+        // deactivate menus
         gameOverMenu.SetActive(gameOver);
         pauseMenu.SetActive(paused);
+        upgradeMenu.SetActive(false);
 
         // set vertices from menu selection; default to 5
         vertices = MainManager.Instance is null ? 5 : MainManager.Instance.polygonSize;
@@ -125,7 +133,7 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        if (!(paused || gameOver))
+        if (!(paused || gameOver || pickingUpgrade))
         {
             HandleCollisions();
             if (
@@ -229,6 +237,66 @@ public class GameManager : MonoBehaviour
     void StartRound()
     {
         startRound = true;
+    }
+
+    List<float> UpgradeCardXPositions(int count)
+    {
+        List<float> positions = new();
+        var width = upgradeMenu.GetComponent<RectTransform>().rect.width;
+        var totalSpaces = 2 * count + 1;
+        var widthPerSpace = width / totalSpaces;
+        for(var i = 0; i < count; i++)
+        {
+            var position = (2 * i + 1) * widthPerSpace - width/2;
+            positions.Add(position);
+        }
+        return positions;
+    }
+
+    void LevelUp()
+    {
+        pickingUpgrade = true;
+        if (startRoundButton is not null)
+        {
+            startRoundButton.interactable = false;
+        }
+        upgradeMenu.SetActive(true);
+        // show menu with upgrade options
+        var upgrades = UpgradeManager.TakeN(3);
+        var xPositions = UpgradeCardXPositions(upgrades.Count);
+        for(var i = 0; i < upgrades.Count; i++)
+        {
+            var upgrade = upgrades[i];
+            var xPos = xPositions[i];
+            var position = upgradeCard.transform.position;
+            position.x = xPos + upgradeCard.GetComponent<RectTransform>().rect.width/2;
+            var card = Instantiate(upgradeCard, position, upgradeCard.transform.rotation);
+            card.transform.SetParent(upgradeMenu.transform, false);
+
+            var button = card.GetComponent<Button>();
+            button.onClick.AddListener(() => SelectUpgrade(upgrade));
+
+            var title = card.transform.Find("Upgrade Title").GetComponent<TMPro.TMP_Text>(); ;
+            title.SetText(upgrade.nameStr);
+
+            var desc = card.transform.Find("Upgrade Description").GetComponent<TMPro.TMP_Text>();
+            desc.SetText(upgrade.desc);
+        }
+    }
+
+    void SelectUpgrade(Upgrade upgrade)
+    {
+        foreach(Transform child in upgradeMenu.transform)
+        {
+            Debug.Log(child.gameObject.name);
+            if (child.gameObject.name != "Upgrade Menu Title Text")
+            {
+                Destroy(child.gameObject);
+            }
+        }
+        pickingUpgrade = false;
+        startRoundButton.interactable = true;
+        upgradeMenu.SetActive(false);
     }
 
     void AddPolygon()
@@ -483,12 +551,8 @@ public class GameManager : MonoBehaviour
 
     int XPToNextLevel()
     {
+        return 1;
         var nextLevel = level + 1;
         return nextLevel * nextLevel + 40 * nextLevel;
-    }
-
-    void LevelUp()
-    {
-
     }
 }
