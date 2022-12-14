@@ -29,7 +29,7 @@ public static class UpgradeManager
     const string cooperationDesc = "polygons split damage with neighbours";
 
     static Dictionary<UpgradeName, Upgrade> upgradeStatus = new();
-    
+
     // define order in which to apply upgrades
     static List<Upgrade> upgradeList = new();
 
@@ -96,7 +96,6 @@ public class Upgrade
     public string nameStr { get; private set; }
     public string desc { get; private set; }
     public bool applied { get; private set; } = false;
-    public bool active { get; private set; } = false;
 
     public Upgrade(UpgradeManager.UpgradeName name, string nameStr, string desc)
     {
@@ -108,9 +107,5 @@ public class Upgrade
     public void SetApplied()
     {
         applied = true;
-    }
-    public void SetActive()
-    {
-        active = true;
     }
 }

@@ -286,9 +286,13 @@ public class GameManager : MonoBehaviour
 
     void SelectUpgrade(Upgrade upgrade)
     {
+        foreach(var polygon in polygonClones)
+        {
+            polygon.ApplyUpgrade(upgrade);
+        }
+        upgrade.SetApplied();
         foreach(Transform child in upgradeMenu.transform)
         {
-            Debug.Log(child.gameObject.name);
             if (child.gameObject.name != "Upgrade Menu Title Text")
             {
                 Destroy(child.gameObject);
@@ -545,6 +549,7 @@ public class GameManager : MonoBehaviour
 
     int EnemyVertices()
     {
+        return 5;
         int roundSquare = Mathf.Max(round - 3, 0);
         return 20 * round + (roundSquare)*(roundSquare);
     }

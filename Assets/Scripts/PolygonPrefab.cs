@@ -4,15 +4,21 @@ using UnityEngine;
 
 public class PolygonPrefab : MonoBehaviour
 {
-    protected LineRenderer lineRenderer;
-    protected PolygonCollider2D polygonCollider;
+    LineRenderer lineRenderer;
+    PolygonCollider2D polygonCollider;
 
     GameManager gameManager;
-    Rigidbody2D rigidbody;
+    Rigidbody2D polygonRigidbody;
 
     public Polygon polygon { get; protected set; }
 
-    protected Vector2[] relativePoints;
+    Vector2[] relativePoints;
+
+    HashSet<UpgradeManager.UpgradeName> appliedUpgrades = new();
+
+    Canvas infoCanvas;
+    TMPro.TMP_Text healthText;
+    TMPro.TMP_Text dmgText;
 
     int _maxHealth;
     public int maxHealth {
@@ -20,7 +26,7 @@ public class PolygonPrefab : MonoBehaviour
             return _maxHealth;
         }
 
-        protected set
+        private set
         {
             _maxHealth = value;
             SetColour();
@@ -35,17 +41,37 @@ public class PolygonPrefab : MonoBehaviour
             return _health;
         }
 
-        set
+        private set
         {
             _health = value;
+            if (healthText is not null)
+            {
+                healthText.SetText(health.ToString());
+            }
             SetColour();
         }
     }
 
-    public int damage { get; protected set; }
+    int _damage;
+    public int damage
+    {
+        get
+        {
+            return _damage;
+        }
 
-    protected Color healthyColour = Color.green;
-    protected Color deadColour = Color.red;
+        private set
+        {
+            _damage = value;
+            if (dmgText is not null)
+            {
+                dmgText.SetText(damage.ToString());
+            }
+        }
+    }
+
+    Color healthyColour = Color.green;
+    Color deadColour = Color.red;
 
     Color enemyHealthyColour = Color.magenta;
     Color enemyDeadColour = Color.black;
@@ -53,16 +79,28 @@ public class PolygonPrefab : MonoBehaviour
     Color ghostColour = Color.grey;
     Color rootColour = Color.cyan;
 
-    protected float lineWidth = 0.1f;
+    float lineWidth = 0.1f;
 
     public bool enemy { get; private set; }
+
+    private void Update()
+    {
+        if (enemy)
+        {
+            infoCanvas.transform.rotation = Quaternion.identity;
+        }
+    }
 
     void Awake()
     {
         lineRenderer = GetComponent<LineRenderer>();
         polygonCollider = GetComponent<PolygonCollider2D>();
-        rigidbody = GetComponent<Rigidbody2D>();
+        polygonRigidbody = GetComponent<Rigidbody2D>();
         gameManager = Helpers.GameManager();
+        var canvasObj = gameObject.transform.Find("Canvas");
+        infoCanvas = canvasObj.GetComponent<Canvas>();
+        healthText = canvasObj.transform.Find("Health Text").GetComponent<TMPro.TMP_Text>();
+        dmgText = canvasObj.transform.Find("Damage Text").GetComponent<TMPro.TMP_Text>();
     }
 
     public void Initialize(Polygon polygon, bool enemy)
@@ -83,7 +121,7 @@ public class PolygonPrefab : MonoBehaviour
         Draw();
     }
 
-    protected void SetRelativePoints()
+    void SetRelativePoints()
     {
         relativePoints = new Vector2[polygon.points.Length];
         for (var i = 0; i < polygon.points.Length; i++)
@@ -117,11 +155,11 @@ public class PolygonPrefab : MonoBehaviour
     {
         if (enemy)
         {
-            rigidbody.position = polygon.centroid;
+            polygonRigidbody.position = polygon.centroid;
         } else
         {
-            var oldRigidbody = rigidbody;
-            rigidbody = null;
+            var oldRigidbody = polygonRigidbody;
+            polygonRigidbody = null;
             Destroy(oldRigidbody);
         }
     }
@@ -187,7 +225,7 @@ public class PolygonPrefab : MonoBehaviour
         SetColour();
     }
 
-    protected void Draw()
+    void Draw()
     {
         Vector3[] points3D = new Vector3[relativePoints.Length];
         for (var i = 0; i < relativePoints.Length; i++)
@@ -206,41 +244,41 @@ public class PolygonPrefab : MonoBehaviour
         lineRenderer.SetPositions(points3D);
     }
 
-    public virtual bool TakeDamage(int damageTaken)
+    public bool TakeDamage(int damageTaken)
     {
         health -= damageTaken;
         return IsDead();
     }
 
-    public virtual bool IsDead()
+    public bool IsDead()
     {
         return health <= 0;
     }
 
-    public void ApplyHeartbeat()
+    void ApplyReinforce()
     {
         maxHealth += 2;
+        health += 2;
     }
 
     public void ApplyUpgrade(Upgrade upgrade)
     {
-        if (!upgrade.active || upgrade.applied) return;
+        if (appliedUpgrades.Contains(upgrade.name)) return;
         switch(upgrade.name)
         {
             case UpgradeManager.UpgradeName.heartbeat:
-                ApplyHeartbeat();
                 break;
             case UpgradeManager.UpgradeName.cooperation:
                 break;
             case UpgradeManager.UpgradeName.reinforce:
+                ApplyReinforce();
                 break;
             case UpgradeManager.UpgradeName.warehouse:
                 break;
             default:
                 break;
         }
-        upgrade.SetApplied();
-        upgrade.SetActive();
+        appliedUpgrades.Add(upgrade.name);
     }
 
     public void ApplyAllUpgrades()
