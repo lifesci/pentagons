@@ -118,6 +118,8 @@ public class PolygonPrefab : MonoBehaviour
         InitializeRigidbody();
         InitializeTag();
 
+        ApplyAllUpgrades();
+
         Draw();
     }
 
@@ -283,9 +285,13 @@ public class PolygonPrefab : MonoBehaviour
 
     public void ApplyAllUpgrades()
     {
+        if (enemy) return;
         foreach(var upgrade in UpgradeManager.GetUpgradeList())
         {
-            ApplyUpgrade(upgrade);
+            if (upgrade.applied)
+            {
+                ApplyUpgrade(upgrade);
+            }
         }
     }
 }
