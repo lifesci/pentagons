@@ -284,7 +284,7 @@ GameObject:
   - component: {fileID: 5995208652625860259}
   m_Layer: 5
   m_Name: Upgrade Prefab
-  m_TagString: Untagged
+  m_TagString: UpgradeCard
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

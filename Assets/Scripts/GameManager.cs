@@ -91,6 +91,7 @@ public class GameManager : MonoBehaviour
     // Upgrade objects
     [SerializeField] GameObject upgradeCard;
     [SerializeField] GameObject upgradeMenu;
+    Button skipUpgradeButton;
 
     void Start()
     {
@@ -104,11 +105,15 @@ public class GameManager : MonoBehaviour
         inventoryText = GameObject.Find("Inventory Text").GetComponent<TMPro.TMP_Text>();
         startRoundButton = GameObject.Find("Start Round Button").GetComponent<Button>();
 
+        // get upgrade menu objects
+        skipUpgradeButton = GameObject.Find("Skip Button").GetComponent<Button>();
+
         // set button actions
         resumeButton.onClick.AddListener(UnPause);
         pauseMainMenuButton.onClick.AddListener(GoToMainMenu);
         gameOverMainMenuButton.onClick.AddListener(GoToMainMenu);
         startRoundButton.onClick.AddListener(StartRound);
+        skipUpgradeButton.onClick.AddListener(() => SelectUpgrade(null));
 
         // init paused and game over flags
         paused = false;
@@ -286,14 +291,17 @@ public class GameManager : MonoBehaviour
 
     void SelectUpgrade(Upgrade upgrade)
     {
-        foreach(var polygon in polygonClones)
+        if (upgrade is not null)
         {
-            polygon.ApplyUpgrade(upgrade);
+            foreach(var polygon in polygonClones)
+            {
+                polygon.ApplyUpgrade(upgrade);
+            }
+            upgrade.SetApplied();
         }
-        upgrade.SetApplied();
         foreach(Transform child in upgradeMenu.transform)
         {
-            if (child.gameObject.name != "Upgrade Menu Title Text")
+            if (child.gameObject.CompareTag("UpgradeCard"))
             {
                 Destroy(child.gameObject);
             }
